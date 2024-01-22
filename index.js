@@ -71,12 +71,12 @@ app.put('/roles/:email', async (req, res) => {
   const query = { email: email }
   const role = req.body;
   try {
-    const userExist = userCollection.findOne(query)
+    const userExist = await userCollection.findOne(query);
     if (!userExist) {
       return res.status(409).send({ message: 'User not found' })
     }
     const result = await userCollection.findOneAndUpdate(query, { $set: role }, { upsert: true })
-    res.status(201).send(result)
+    res.status(201).send({message : 'true'})
   } catch (error) {
     res.status(500).send(error)
 
