@@ -35,20 +35,10 @@ dbConnect()
 const userCollection = client.db("lumijob").collection("users");
 
 app.get('/', (req, res) => {
-    res.send('Welcome to LumiJob ');
+    res.send('Welcome to LumiJob');
 })
 
-//User registration to database.
-// app.post('/users', async (req, res) => {
-//     const user = req.body;
-//     const query = { email: user.email };
-//     const existingUser = await userCollection.findOne(query);
-//     if (existingUser) {
-//         return res.send({ message: 'User already exists' });
-//     }
-//     const result = await userCollection.insertOne(user);
-//     res.send(result);
-// })
+//create user
 app.post('/users', async (req, res) => {
     const user = req.body;
     const query = { email: user.email };
