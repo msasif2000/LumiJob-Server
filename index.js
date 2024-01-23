@@ -71,17 +71,37 @@ app.put('/roles/:email', async (req, res) => {
   const query = { email: email }
   const role = req.body;
   try {
-    const userExist = userCollection.findOne(query)
+    const userExist = await userCollection.findOne(query);
     if (!userExist) {
       return res.status(409).send({ message: 'User not found' })
     }
     const result = await userCollection.findOneAndUpdate(query, { $set: role }, { upsert: true })
-    res.status(201).send(result)
+    res.status(201).send({ message: 'true' })
   } catch (error) {
     res.status(500).send(error)
 
   }
 })
+
+// Check if any role exist
+app.get('/check-role/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const user = await userCollection.findOne({ email: email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const userRole = user.role || false;
+
+    res.status(200).json({ role: userRole });
+  } catch (error) {
+    console.error('Error checking user role:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 
 app.listen(port, () => {
