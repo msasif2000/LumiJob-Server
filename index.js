@@ -33,6 +33,7 @@ const dbConnect = async () => {
 dbConnect()
 
 const userCollection = client.db("lumijob").collection("users");
+const jobPostsCollection = client.db("lumijob").collection("jobPosts");
 
 app.get('/', (req, res) => {
   res.send('Welcome to LumiJob');
@@ -101,6 +102,12 @@ app.get('/check-role/:email', async (req, res) => {
   }
 });
 
+
+app.post('/postJob', async( req, res) => {
+  const jobPost = req.body;
+  const postJob = await jobPostsCollection.insertOne(jobPost);
+  res.send(postJob);
+})
 
 
 app.listen(port, () => {
