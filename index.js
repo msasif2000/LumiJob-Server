@@ -61,9 +61,14 @@ app.post('/users', async (req, res) => {
 });
 
 //get user data
-app.get('/users', (req, res) => {
-  const result = userCollection.find().toArray();
-  res.send(result);
+app.get('/users/:email', (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  userCollection.findOne(query)
+    .then(result => {
+      res.send(result);
+    })
+    .catch(err => console.log(err))
 })
 
 // For Upgrading user role
