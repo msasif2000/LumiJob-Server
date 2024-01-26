@@ -94,7 +94,6 @@ app.get('/check-role/:email', async (req, res) => {
     }
 
     const userRole = user.role || false;
-
     res.status(200).json({ role: userRole });
   } catch (error) {
     console.error('Error checking user role:', error);
