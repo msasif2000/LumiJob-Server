@@ -37,6 +37,8 @@ dbConnect()
 
 const userCollection = client.db("lumijob").collection("users");
 const jobPostsCollection = client.db("lumijob").collection("jobPosts");
+const seminarsCollection = client.db("lumijob").collection("Seminar");
+const blogsCollection = client.db("lumijob").collection("Blogpost");
 
 app.get('/', (req, res) => {
   res.send('Welcome to LumiJob');
@@ -126,7 +128,6 @@ app.get('/check-which-role/:email', async (req, res) => {
   }
 })
 
-
 app.post('/postJob', async (req, res) => {
   const jobPost = req.body;
   const postJob = await jobPostsCollection.insertOne(jobPost);
@@ -152,7 +153,18 @@ app.put('/user-update/:email', async (req, res) => {
   }
 })
 
+//get seminars data
+app.get('/seminars', async(req, res) => {
+  const seminars = await seminarsCollection.find({}).toArray();
+  res.send(seminars);
+})
 
+
+//get blog data
+app.get('/blogs', async(req, res) => {
+  const blogs = await blogsCollection.find({}).toArray();
+  res.send(blogs);
+})
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
