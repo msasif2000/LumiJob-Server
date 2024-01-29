@@ -37,6 +37,8 @@ dbConnect()
 
 const userCollection = client.db("lumijob").collection("users");
 const jobPostsCollection = client.db("lumijob").collection("jobPosts");
+const seminersCollection = client.db("lumijob").collection("Seminar");
+const blogsCollection = client.db("lumijob").collection("Blogpost");
 
 app.get('/', (req, res) => {
   res.send('Welcome to LumiJob');
@@ -149,6 +151,31 @@ app.put('/user-update/:email', async (req, res) => {
   }
   catch (error) {
     res.status(500).send(error)
+  }
+})
+
+// Get seminers
+app.get('/get-all-seminars', async (req, res) => {
+  const query = {}
+  try {
+    const result = await seminersCollection.find(query).toArray()
+    res.send(result)
+  }
+  catch (error) {
+    console.log(error)
+    res.send({ message: error })
+  }
+})
+// Get blogs
+app.get('/get-all-blogs', async (req, res) => {
+  const query = {}
+  try {
+    const result = await blogsCollection.find(query).toArray()
+    res.send(result)
+  }
+  catch (error) {
+    console.log(error)
+    res.send({ message: error })
   }
 })
 
