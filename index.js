@@ -1,9 +1,14 @@
+const cloudinary = require('cloudinary').v2;
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+const fs = require('fs');
+
 
 app.use(cors({
   origin: [
@@ -12,7 +17,16 @@ app.use(cors({
   ]
 
 }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.apfagft.mongodb.net/`
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -34,6 +48,7 @@ const dbConnect = async () => {
   }
 }
 dbConnect()
+
 
 const userCollection = client.db("lumijob").collection("users");
 const jobPostsCollection = client.db("lumijob").collection("jobPosts");
@@ -134,34 +149,55 @@ app.post('/postJob', async (req, res) => {
   res.send(postJob);
 })
 
+
 // update user info
-app.put('/user-update/:email', async (req, res) => {
-  const email = req.params.email
-  const user = req.body
-  const filter = { email: email }
-  const options = { upsert: true }
+app.put('/user-update/:email', upload.single('photo'), async (req, res) => {
+  const email = req.params.email;
+  const user = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+
   try {
-    const userExist = await userCollection.findOne(filter)
+    const userExist = await userCollection.findOne(filter);
+
     if (!userExist) {
-      return res.status(404).send({ message: 'User not found' })
+      return res.status(404).send({ message: 'User not found' });
     }
-    const result = await userCollection.findOneAndUpdate(filter, { $set: user }, options)
-    res.send({ message: 'true' })
+
+    if (req.file) {
+
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'LumiJob',
+        quality: 'auto:good',
+        fetch_format: 'auto',
+      });
+
+      user.photo = result.secure_url;
+      // console.log(user.photo);
+
+      fs.unlinkSync(req.file.path);
+    }
+
+
+    const result = await userCollection.findOneAndUpdate(filter, { $set: user }, options);
+    res.send({ message: 'true' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
   }
-  catch (error) {
-    res.status(500).send(error)
-  }
-})
+});
+
+
 
 //get seminars data
-app.get('/seminars', async(req, res) => {
+app.get('/seminars', async (req, res) => {
   const seminars = await seminarsCollection.find({}).toArray();
   res.send(seminars);
 })
 
 
 //get blog data
-app.get('/blogs', async(req, res) => {
+app.get('/blogs', async (req, res) => {
   const blogs = await blogsCollection.find({}).toArray();
   res.send(blogs);
 })
