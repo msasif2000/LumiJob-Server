@@ -175,7 +175,11 @@ app.put('/user-update/:email', upload.single('photo'), async (req, res) => {
       user.photo = result.secure_url;
       // console.log(user.photo);
 
-      fs.unlinkSync(req.file.path);
+      fs.unlink(req.file.path, (unlinkError) => {
+        if (unlinkError) {
+          console.error('Error deleting temporary file:', unlinkError);
+        }
+      });
     }
 
 
