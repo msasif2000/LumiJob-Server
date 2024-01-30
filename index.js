@@ -167,7 +167,7 @@ app.put('/user-update/:email', async (req, res) => {
 
     const result = await userCollection.findOneAndUpdate(filter, { $set: userData }, options);
     res.send({ message: 'true' });
-    // console.log(result);
+    console.log(result);
   } catch (error) {
     console.error(error);
     res.status(500).send(error);
@@ -175,7 +175,7 @@ app.put('/user-update/:email', async (req, res) => {
 });
 
 // Update user profile photo
-app.post('/user-update-photo/:email', upload.single('photo'), async (req, res) => {
+app.post('/update-photo/:email', upload.single('photo'), async (req, res) => {
   const email = req.params.email;
 
   try {
