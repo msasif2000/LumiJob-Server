@@ -206,6 +206,13 @@ app.get('/blogs', async (req, res) => {
 })
 
 
+//get job post data
+app.get('/all-job-posts', async (req, res) => {
+  const jobPosts = await jobPostsCollection.find({}).toArray();
+  res.send(jobPosts);
+})
+
+
 //################## Job filter Begin #####################
 
 //get filtered job data by category
