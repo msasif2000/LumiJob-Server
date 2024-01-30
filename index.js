@@ -150,41 +150,65 @@ app.post('/postJob', async (req, res) => {
 })
 
 
-// update user info
-app.put('/user-update/:email', upload.single('photo'), async (req, res) => {
+// Update user data
+app.put('/user-update/:email', async (req, res) => {
   const email = req.params.email;
-  const user = req.body;
-  const filter = { email: email };
-  const options = { upsert: true };
+  const userData = req.body;
 
   try {
+    const filter = { email: email };
+    const options = { upsert: true };
+
     const userExist = await userCollection.findOne(filter);
 
     if (!userExist) {
       return res.status(404).send({ message: 'User not found' });
     }
 
-    if (req.file) {
+    const result = await userCollection.findOneAndUpdate(filter, { $set: userData }, options);
+    res.send({ message: 'true' });
+    // console.log(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
+// Update user profile photo
+app.post('/user-update-photo/:email', upload.single('photo'), async (req, res) => {
+  const email = req.params.email;
+
+  try {
+    const userExist = await userCollection.findOne({ email: email });
+
+    if (!userExist) {
+      return res.status(404).send({ message: 'User not found' });
+    }
+
+    if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'LumiJob',
         quality: 'auto:good',
         fetch_format: 'auto',
       });
 
-      user.photo = result.secure_url;
-      // console.log(user.photo);
+      const updatedUser = await userCollection.findOneAndUpdate(
+        { email: email },
+        { $set: { photo: result.secure_url } },
+        { upsert: true }
+      );
 
       fs.unlink(req.file.path, (unlinkError) => {
         if (unlinkError) {
           console.error('Error deleting temporary file:', unlinkError);
         }
       });
+
+      res.send({ message: true });
+      console.log(updatedUser);
+    } else {
+      res.status(400).send({ message: 'No photo provided' });
     }
-
-
-    const result = await userCollection.findOneAndUpdate(filter, { $set: user }, options);
-    res.send({ message: 'true' });
   } catch (error) {
     console.error(error);
     res.status(500).send(error);
@@ -204,6 +228,27 @@ app.get('/seminars', async (req, res) => {
 app.get('/blogs', async (req, res) => {
   const blogs = await blogsCollection.find({}).toArray();
   res.send(blogs);
+})
+
+
+// Get user for profile 
+app.get('/user-profile/:email', async (req, res) => {
+  const email = req.params.email
+  const query = { email: email }
+  try {
+
+    const existingUser = await userCollection.findOne(query)
+    if (!existingUser) {
+      return res.status(404).send({ message: 'User not found' })
+    }
+
+    const user = await userCollection.findOne(query)
+    res.send(user)
+  }
+  catch (error) {
+    console.error(error)
+    res.status(500).send(error)
+  }
 })
 
 app.listen(port, () => {
