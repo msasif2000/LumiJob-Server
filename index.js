@@ -223,13 +223,11 @@ app.get('/seminars', async (req, res) => {
   res.send(seminars);
 })
 
-
 //get blog data
 app.get('/blogs', async (req, res) => {
   const blogs = await blogsCollection.find({}).toArray();
   res.send(blogs);
 })
-
 
 // Get user for profile 
 app.get('/user-profile/:email', async (req, res) => {
@@ -250,6 +248,49 @@ app.get('/user-profile/:email', async (req, res) => {
     res.status(500).send(error)
   }
 })
+
+//get job post data
+app.get('/all-job-posts', async (req, res) => {
+  const jobPosts = await jobPostsCollection.find({}).toArray();
+  res.send(jobPosts);
+})
+
+
+//################## Job filter Begin #####################
+
+//get filtered job data by category
+app.get('/jobs-by-category/:category', async (req, res) => {
+  const category = req.params.category;
+  const query = { category: category };
+  const jobs = await jobPostsCollection.find(query).toArray();
+  res.send(jobs);
+})
+
+//get filtered job data by date
+app.get('/jobs-by-date/:date', async (req, res) => {
+  const date = req.params.date;
+  const query = { date: date };
+  const jobs = await jobPostsCollection.find(query).toArray();
+  res.send(jobs);
+})
+
+//get filtered job data by job type
+app.get('/jobs-by-jobType/:jobType', async (req, res) => {
+  const jobType = req.params.jobType;
+  const query = { jobType: jobType };
+  const jobs = await jobPostsCollection.find(query).toArray();
+  res.send(jobs);
+})
+
+//get filtered job data by salary
+app.get('/jobs-by-salary/:salary', async (req, res) => {
+  const salary = req.params.salary;
+  const query = { salary: salary };
+  const jobs = await jobPostsCollection.find(query).toArray();
+  res.send(jobs);
+})
+
+//################## Job filter END #####################
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
