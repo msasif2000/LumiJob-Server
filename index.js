@@ -48,6 +48,7 @@ const userCollection = client.db("lumijob").collection("users");
 const jobPostsCollection = client.db("lumijob").collection("jobPosts");
 const seminarsCollection = client.db("lumijob").collection("Seminar");
 const blogsCollection = client.db("lumijob").collection("Blogpost");
+const bookmarksCollection = client.db("lumijob").collection("bookmarks");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -309,6 +310,39 @@ app.get("/jobs-by-salary/:salary", async (req, res) => {
 });
 
 //################## Job filter END #####################
+
+
+// --------------------- job bookmark start ---------------
+
+
+// app.get("/bookmarks", async (req, res) => {
+//   const bookmarks = await bookmarksCollection.find({}).toArray();
+//   res.send(bookmarks);
+// });
+
+
+app.get('/bookmarks', async (req, res) => {
+  const email = req.query.email;
+  const query = { email: email };
+  const result = await bookmarksCollection.find(query).toArray();
+  res.send(result);
+});
+
+app.post('/bookmarks', async (req, res) => {
+  const bookmarkItem = req.body;
+  const result = await bookmarksCollection.insertOne(bookmarkItem);
+  res.send(result);
+});
+
+app.delete('/bookmarks/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await bookmarksCollection.deleteOne(query);
+  res.send(result);
+})
+
+
+// ----------------------job bookmark end------------------
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
