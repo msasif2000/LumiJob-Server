@@ -232,6 +232,23 @@ app.get("/blogs", async (req, res) => {
   res.send(blogs);
 });
 
+app.get("/single-blog/:id", async (req, res) => {
+  const id = req.params.id;
+  console.log("Received params:", req.params);
+  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+    return res.status(400).send({ message: 'Invalid ObjectId' });
+  }
+  const query = { _id: new ObjectId(id) };
+  try {
+    const blogs = await blogsCollection.findOne(query);
+    res.send(blogs);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
+
 // Get user for profile
 app.get("/user-profile/:email", async (req, res) => {
   const email = req.params.email;
@@ -241,6 +258,7 @@ app.get("/user-profile/:email", async (req, res) => {
     if (!existingUser) {
       return res.status(404).send({ message: "User not found" });
     }
+
 
     const user = await userCollection.findOne(query);
     res.send(user);
