@@ -154,6 +154,21 @@ app.post("/postJob", async (req, res) => {
 });
 
 
+app.get('/postJob', async (req, res) => {
+  const cursor = jobPostsCollection.find();
+  const result = await cursor.toArray();
+  res.send(result);
+})
+
+
+app.delete('/postJob/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await jobPostsCollection.deleteOne(query);
+  res.send(result);
+})
+
+
 // update user information in role specific database
 app.put("/user-update/:email", async (req, res) => {
   const email = req.params.email;
@@ -375,6 +390,30 @@ app.get("/jobs-by-salary/:salary", async (req, res) => {
 //################## Job filter END #####################
 
 
+
+
+//-----pagination-----
+
+// pagination api
+// app.get('/pagination', async (req, res) => {
+//   const page = parseInt(req.query.page);
+//   const size = parseInt(req.query.size);
+
+//   const result = await jobPostsCollection.find()
+//     .skip(page * size)
+//     .limit(size)
+//     .toArray();
+//   res.send(result)
+// })
+
+
+// app.get('/paginationCount', async (req, res) => {
+//   const count = await jobPostsCollection.estimatedDocumentCount()
+//   res.send({ count })
+// })
+
+
+
 // --------------------- job bookmark start ---------------
 
 
@@ -405,7 +444,6 @@ app.delete('/bookmarks/:id', async (req, res) => {
 })
 
 
-// ----------------------job bookmark end------------------
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
