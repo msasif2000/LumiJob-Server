@@ -149,8 +149,14 @@ app.get("/check-which-role/:email", async (req, res) => {
 
 app.post("/postJob", async (req, res) => {
   const jobPost = req.body;
-  const postJob = await jobPostsCollection.insertOne(jobPost);
-  res.send(postJob);
+  try {
+    const postJob = await jobPostsCollection.insertOne(jobPost);
+    res.send(postJob);
+
+  }
+  catch (error) {
+    res.send(error)
+  }
 });
 
 
@@ -272,6 +278,31 @@ app.get('/specific-candidate/:email', async (req, res) => {
   try {
     const result = await candidateCollection.findOne({ email: email })
     res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
+
+// get specific company data from company collection
+app.get('/specific-company/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const result = await companyCollection.findOne({ email: email })
+    res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
+
+// post jobs api because upper api not working
+app.post('/post-jobs', async(req,res)=>{
+  const data = req.body;
+  try{
+    const result = await jobPostsCollection.insertOne(data)
+    res.send(result)
+    console.log(result)
   }
   catch (error) {
     res.send({ message: 'Failed' })
