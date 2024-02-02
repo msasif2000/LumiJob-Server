@@ -329,40 +329,39 @@ app.get("/user-profile/:email", async (req, res) => {
 });
 
 //get job post data
-// app.get("/all-job-posts", async (req, res) => {
-//   const jobPosts = await jobPostsCollection.find({}).toArray();
-//   res.send(jobPosts);
-// });
-
 app.get("/all-job-posts", async (req, res) => {
-  try {
-    // Extract filter parameters from query string
-    const { sectorType, jobType } = req.query;
-
-    // Construct query object
-    const query = {};
-
-    // Apply sectorType filter if provided
-    if (sectorType) {
-      query.sectorType = sectorType;
-    }
-
-    // Apply jobType filter if provided
-    if (jobType) {
-      query.jobType = jobType;
-    }
-
-    // Query MongoDB based on the constructed query
-    const jobPosts = await jobPostsCollection.find(query).toArray();
-    
-    // Send the filtered job posts as response
-    res.json(jobPosts); // Ensure response is in JSON format
-  } catch (error) {
-    console.error('Error fetching job posts:', error);
-    res.status(500).json({ message: 'Server Error' });
-  }
+  const jobPosts = await jobPostsCollection.find({}).toArray();
+  res.send(jobPosts);
 });
 
+// app.get("/all-job-posts", async (req, res) => {
+//   try {
+//     // Extract filter parameters from query string
+//     const { sectorType, jobType } = req.query;
+
+//     // Construct query object
+//     const query = {};
+
+//     // Apply sectorType filter if provided
+//     if (sectorType) {
+//       query.sectorType = sector;
+//     }
+
+//     // Apply jobType filter if provided
+//     if (jobType) {
+//       query.jobType = jobType;
+//     }
+
+//     // Query MongoDB based on the constructed query
+//     const jobPosts = await jobPostsCollection.find(query).toArray();
+    
+//     // Send the filtered job posts as response
+//     res.json(jobPosts); // Ensure response is in JSON format
+//   } catch (error) {
+//     console.error('Error fetching job posts:', error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
 
 /// search functionality
 app.get("/job-Search", async (req, res) => {
@@ -382,9 +381,6 @@ app.get("/job-Search", async (req, res) => {
     res.status(500).send(error);
   }
 });
-
-//################## Job filter END #####################
-
 
 
 
