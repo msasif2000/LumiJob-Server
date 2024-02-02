@@ -45,6 +45,8 @@ const dbConnect = async () => {
 dbConnect();
 
 const userCollection = client.db("lumijob").collection("users");
+const candidateCollection = client.db("lumijob").collection("candidates");
+const companyCollection = client.db("lumijob").collection("companies")
 const jobPostsCollection = client.db("lumijob").collection("jobPosts");
 const seminarsCollection = client.db("lumijob").collection("Seminar");
 const blogsCollection = client.db("lumijob").collection("Blogpost");
@@ -151,26 +153,37 @@ app.post("/postJob", async (req, res) => {
   res.send(postJob);
 });
 
-// Update user data
+
+// update user information in role specific database
 app.put("/user-update/:email", async (req, res) => {
   const email = req.params.email;
   const userData = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+  console.log(userData)
 
   try {
-    const filter = { email: email };
-    const options = { upsert: true };
-
     const userExist = await userCollection.findOne(filter);
-
+    let result;
     if (!userExist) {
       return res.status(404).send({ message: "User not found" });
     }
+    else if (userData.role === 'candidate') {
+      result = await candidateCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else if (userData.role === 'company') {
+      result = await companyCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else {
+      return res.status(400).send({ message: "Invalid role specified" });
+    }
 
-    const result = await userCollection.findOneAndUpdate(
-      filter,
-      { $set: userData },
-      options
-    );
     res.send({ message: "true" });
     console.log(result);
   } catch (error) {
@@ -186,6 +199,9 @@ app.post("/update-photo/:email", upload.single("photo"), async (req, res) => {
   try {
     const userExist = await userCollection.findOne({ email: email });
 
+    const role = userExist?.role
+    console.log(role)
+
     if (!userExist) {
       return res.status(404).send({ message: "User not found" });
     }
@@ -196,6 +212,21 @@ app.post("/update-photo/:email", upload.single("photo"), async (req, res) => {
         quality: "auto:good",
         fetch_format: "auto",
       });
+
+      if (role === 'candidate') {
+        const updatedUser = await candidateCollection.findOneAndUpdate(
+          { email: email },
+          { $set: { photo: result.secure_url } },
+          { upsert: true }
+        );
+      }
+      else if (role === 'company') {
+        const updatedUser = await companyCollection.findOneAndUpdate(
+          { email: email },
+          { $set: { photo: result.secure_url } },
+          { upsert: true }
+        );
+      }
 
       const updatedUser = await userCollection.findOneAndUpdate(
         { email: email },
@@ -219,6 +250,20 @@ app.post("/update-photo/:email", upload.single("photo"), async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+// get specific user data from candidates collection
+app.get('/specific-candidate/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const result = await candidateCollection.findOne({ email: email })
+    res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
+
+
 
 //get seminars data
 app.get("/seminars", async (req, res) => {
