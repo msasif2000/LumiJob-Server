@@ -198,7 +198,7 @@ app.put("/user-update/:email", async (req, res) => {
   }
 });
 
-// Update user profile photo
+// Update user profile photo (Don't Touch It without understanding)
 app.post("/update-photo/:email", upload.single("photo"), async (req, res) => {
   const email = req.params.email;
 
@@ -281,6 +281,7 @@ app.get('/specific-company/:email', async (req, res) => {
   }
 })
 
+
 // post jobs api because upper api not working
 app.post('/post-jobs', async(req,res)=>{
   const data = req.body;
@@ -344,11 +345,16 @@ app.get("/user-profile/:email", async (req, res) => {
   }
 });
 
-//get job post data
-app.get("/all-job-posts", async (req, res) => {
-  const jobPosts = await jobPostsCollection.find({}).toArray();
-  res.send(jobPosts);
-});
+//get all job post data
+app.get('/all-job-posts', async(req,res)=>{
+  try{
+    const result = await jobPostsCollection.find({}).toArray();
+    res.send(result)
+  }
+  catch(error){
+    res.send({message:'Error fetching data'})
+  }
+})
 
 /// search functionality
 app.get("/job-Search", async (req, res) => {
