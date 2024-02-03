@@ -160,6 +160,21 @@ app.post("/postJob", async (req, res) => {
 });
 
 
+app.get('/postJob', async (req, res) => {
+  const cursor = jobPostsCollection.find();
+  const result = await cursor.toArray();
+  res.send(result);
+})
+
+
+app.delete('/postJob/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await jobPostsCollection.deleteOne(query);
+  res.send(result);
+})
+
+
 // update user information in role specific database
 app.put("/user-update/:email", async (req, res) => {
   const email = req.params.email;
@@ -356,6 +371,35 @@ app.get('/all-job-posts', async(req,res)=>{
   }
 })
 
+// app.get("/all-job-posts", async (req, res) => {
+//   try {
+//     // Extract filter parameters from query string
+//     const { sectorType, jobType } = req.query;
+
+//     // Construct query object
+//     const query = {};
+
+//     // Apply sectorType filter if provided
+//     if (sectorType) {
+//       query.sectorType = sector;
+//     }
+
+//     // Apply jobType filter if provided
+//     if (jobType) {
+//       query.jobType = jobType;
+//     }
+
+//     // Query MongoDB based on the constructed query
+//     const jobPosts = await jobPostsCollection.find(query).toArray();
+    
+//     // Send the filtered job posts as response
+//     res.json(jobPosts); // Ensure response is in JSON format
+//   } catch (error) {
+//     console.error('Error fetching job posts:', error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
+
 /// search functionality
 app.get("/job-Search", async (req, res) => {
   const filter = req.query;
@@ -375,41 +419,28 @@ app.get("/job-Search", async (req, res) => {
   }
 });
 
-//################## Job filter Begin #####################
 
-//get filtered job data by category
-app.get("/jobs-by-category/:category", async (req, res) => {
-  const category = req.params.category;
-  const query = { category: category };
-  const jobs = await jobPostsCollection.find(query).toArray();
-  res.send(jobs);
-});
 
-//get filtered job data by date
-app.get("/jobs-by-date/:date", async (req, res) => {
-  const date = req.params.date;
-  const query = { date: date };
-  const jobs = await jobPostsCollection.find(query).toArray();
-  res.send(jobs);
-});
+//-----pagination-----
 
-//get filtered job data by job type
-app.get("/jobs-by-jobType/:jobType", async (req, res) => {
-  const jobType = req.params.jobType;
-  const query = { jobType: jobType };
-  const jobs = await jobPostsCollection.find(query).toArray();
-  res.send(jobs);
-});
+// pagination api
+// app.get('/pagination', async (req, res) => {
+//   const page = parseInt(req.query.page);
+//   const size = parseInt(req.query.size);
 
-//get filtered job data by salary
-app.get("/jobs-by-salary/:salary", async (req, res) => {
-  const salary = req.params.salary;
-  const query = { salary: salary };
-  const jobs = await jobPostsCollection.find(query).toArray();
-  res.send(jobs);
-});
+//   const result = await jobPostsCollection.find()
+//     .skip(page * size)
+//     .limit(size)
+//     .toArray();
+//   res.send(result)
+// })
 
-//################## Job filter END #####################
+
+// app.get('/paginationCount', async (req, res) => {
+//   const count = await jobPostsCollection.estimatedDocumentCount()
+//   res.send({ count })
+// })
+
 
 
 // --------------------- job bookmark start ---------------
@@ -442,7 +473,6 @@ app.delete('/bookmarks/:id', async (req, res) => {
 })
 
 
-// ----------------------job bookmark end------------------
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
