@@ -298,9 +298,9 @@ app.get('/specific-company/:email', async (req, res) => {
 
 
 // post jobs api because upper api not working
-app.post('/post-jobs', async(req,res)=>{
+app.post('/post-jobs', async (req, res) => {
   const data = req.body;
-  try{
+  try {
     const result = await jobPostsCollection.insertOne(data)
     res.send(result)
     console.log(result)
@@ -361,15 +361,31 @@ app.get("/user-profile/:email", async (req, res) => {
 });
 
 //get all job post data
-app.get('/all-job-posts', async(req,res)=>{
-  try{
+app.get('/all-job-posts', async (req, res) => {
+  try {
     const result = await jobPostsCollection.find({}).toArray();
     res.send(result)
   }
-  catch(error){
-    res.send({message:'Error fetching data'})
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
   }
 })
+
+// Get single job for details page
+app.get('/single-job/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+
+  try {
+    const result = await jobPostsCollection.findOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+
+})
+
 
 // app.get("/all-job-posts", async (req, res) => {
 //   try {
@@ -391,7 +407,7 @@ app.get('/all-job-posts', async(req,res)=>{
 
 //     // Query MongoDB based on the constructed query
 //     const jobPosts = await jobPostsCollection.find(query).toArray();
-    
+
 //     // Send the filtered job posts as response
 //     res.json(jobPosts); // Ensure response is in JSON format
 //   } catch (error) {
