@@ -1,13 +1,10 @@
-const cloudinary = require("cloudinary").v2;
 const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
-const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
-const fs = require("fs");
+
 
 app.use(
   cors({
@@ -17,12 +14,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Cloudinary configuration
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.apfagft.mongodb.net/`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -205,6 +197,9 @@ app.put("/user-update/:email", async (req, res) => {
       return res.status(400).send({ message: "Invalid role specified" });
     }
 
+    const photo = userData.photo;
+    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
+
     res.send({ message: "true" });
     console.log(result);
   } catch (error) {
@@ -213,64 +208,6 @@ app.put("/user-update/:email", async (req, res) => {
   }
 });
 
-// Update user profile photo (Don't Touch It without understanding)
-app.post("/update-photo/:email", upload.single("photo"), async (req, res) => {
-  const email = req.params.email;
-
-  try {
-    const userExist = await userCollection.findOne({ email: email });
-
-    const role = userExist?.role
-    console.log(role)
-
-    if (!userExist) {
-      return res.status(404).send({ message: "User not found" });
-    }
-
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "LumiJob",
-        quality: "auto:good",
-        fetch_format: "auto",
-      });
-
-      if (role === 'candidate') {
-        const updatedUser = await candidateCollection.findOneAndUpdate(
-          { email: email },
-          { $set: { photo: result.secure_url } },
-          { upsert: true }
-        );
-      }
-      else if (role === 'company') {
-        const updatedUser = await companyCollection.findOneAndUpdate(
-          { email: email },
-          { $set: { photo: result.secure_url } },
-          { upsert: true }
-        );
-      }
-
-      const updatedUser = await userCollection.findOneAndUpdate(
-        { email: email },
-        { $set: { photo: result.secure_url } },
-        { upsert: true }
-      );
-
-      fs.unlink(req.file.path, (unlinkError) => {
-        if (unlinkError) {
-          console.error("Error deleting temporary file:", unlinkError);
-        }
-      });
-
-      res.send({ message: true });
-      console.log(updatedUser);
-    } else {
-      res.status(400).send({ message: "No photo provided" });
-    }
-  } catch (error) {
-    console.error(error);
-    res.status(500).send(error);
-  }
-});
 
 // get specific user data from candidates collection
 app.get('/specific-candidate/:email', async (req, res) => {
