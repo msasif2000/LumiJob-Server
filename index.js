@@ -357,8 +357,12 @@ app.get('/single-job/:id', async (req, res) => {
 app.get("/job-Search", async (req, res) => {
   const filter = req.query;
   const query = {
-    title: { $regex: filter.search, $options: "i" },
+    $or: [
+      { title: { $regex: filter.search, $options: "i" } },
+      { platform: { $regex: filter.search, $options: "i" } }
+    ]
   };
+
   try {
     const userExist = await jobPostsCollection.findOne(query);
     if (!userExist) {
