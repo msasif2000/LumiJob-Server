@@ -43,6 +43,7 @@ const jobPostsCollection = client.db("lumijob").collection("jobPosts");
 const seminarsCollection = client.db("lumijob").collection("Seminar");
 const blogsCollection = client.db("lumijob").collection("Blogpost");
 const bookmarksCollection = client.db("lumijob").collection("bookmarks");
+const applyJobsCollection = client.db("lumijob").collection("appliedJobs");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -246,6 +247,38 @@ app.post('/post-jobs', async (req, res) => {
     res.send({ message: 'Failed' })
   }
 })
+
+
+// Post users applied jobs to database (issue with notification)
+
+app.post('/apply-to-jobs', async (req, res) => {
+  const job = req.body;
+  const email = req.body.candidate;
+  const jobId = req.body.jobId;
+
+  try {
+    const user = await userCollection.findOne({ email: email });
+    const canUserApply = user ? user.canApply : 0;
+
+    const applied = await applyJobsCollection.countDocuments({ candidate: email });
+    const alreadyExist = await applyJobsCollection.findOne({ candidate: email, jobId: jobId });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    } else if (applied >= canUserApply) {
+      return res.status(200).send({ message: "Please update subscription" });
+    } else if (alreadyExist) {
+      return res.status(200).send({ message: "Already applied" });
+    } else {
+      const result = await applyJobsCollection.insertOne(job);
+      console.log(result);
+      return res.status(200).send({ message: "Job application successful", insertedId: result.insertedId });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ message: 'Failed' });
+  }
+});
 
 
 
