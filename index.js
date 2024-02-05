@@ -249,7 +249,7 @@ app.post('/post-jobs', async (req, res) => {
 })
 
 
-// Post users applied jobs to database (issue with notification)
+// Post users applied jobs to database.
 
 app.post('/apply-to-jobs', async (req, res) => {
   const job = req.body;
@@ -279,6 +279,19 @@ app.post('/apply-to-jobs', async (req, res) => {
     return res.status(500).send({ message: 'Failed' });
   }
 });
+
+// get applied jobs back
+app.get('/get-applied-jobs/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { candidate: email }
+  try {
+    const result = await applyJobsCollection.find(query).toArray()
+    res.send(result)
+  }
+  catch (error) {
+    res.status(404).send({ message: 'No applied jobs' })
+  }
+})
 
 
 
