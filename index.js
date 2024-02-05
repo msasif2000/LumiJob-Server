@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://lumijobs-84d3b.web.app"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://lumijobs-84d3b.web.app"],
   })
 );
 app.use(express.urlencoded({ extended: true }));
@@ -340,6 +340,33 @@ app.get('/all-job-posts', async (req, res) => {
     res.send({ message: 'Error fetching data' })
   }
 })
+
+// job filter--
+
+app.get('/filter-job-posts', async (req, res) => {
+  try {
+    const { sectorType, jobType } = req.query;
+    const query = {};
+
+    if (sectorType) {
+      // Split the sectorType query parameter into an array if it contains multiple values
+      const sectors = typeof sectorType === 'string' ? sectorType.split(',') : sectorType;
+      query.sectorType = { $in: sectors };
+    }
+
+    if (jobType) {
+      const types = typeof jobType === 'string' ? jobType.split(',') : jobType;
+      query.jobType = { $in: types };
+    }
+
+    const result = await jobPostsCollection.find(query).toArray();
+    res.send(result);
+  } catch (error) {
+    res.status(500).send({ message: 'Error fetching data' });
+  }
+});
+
+
 
 // Get single job for details page
 app.get('/single-job/:id', async (req, res) => {
