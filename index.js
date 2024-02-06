@@ -36,6 +36,7 @@ const dbConnect = async () => {
 };
 dbConnect();
 
+//database collections
 const userCollection = client.db("lumijob").collection("users");
 const candidateCollection = client.db("lumijob").collection("candidates");
 const companyCollection = client.db("lumijob").collection("companies")
@@ -71,18 +72,6 @@ app.post("/users", async (req, res) => {
     console.error("Error creating user:", error);
     res.status(500).json({ message: "Internal server error" });
   }
-});
-
-//get user data
-app.get("/users/:email", (req, res) => {
-  const email = req.params.email;
-  const query = { email: email };
-  userCollection
-    .findOne(query)
-    .then((result) => {
-      res.send(result);
-    })
-    .catch((err) => console.log(err));
 });
 
 // For Upgrading user role
@@ -138,6 +127,19 @@ app.get("/check-which-role/:email", async (req, res) => {
     console.error("Error checking user role:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+});
+
+
+//get user data
+app.get("/users/:email", (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  userCollection
+    .findOne(query)
+    .then((result) => {
+      res.send(result);
+    })
+    .catch((err) => console.log(err));
 });
 
 app.post("/postJob", async (req, res) => {
@@ -369,6 +371,7 @@ app.get("/blogs", async (req, res) => {
   res.send(blogs);
 });
 
+//get single blog data
 app.get("/single-blog/:id", async (req, res) => {
   const id = req.params.id;
   console.log("Received params:", req.params);
@@ -458,37 +461,7 @@ app.get('/single-job/:id', async (req, res) => {
 
 })
 
-
-// app.get("/all-job-posts", async (req, res) => {
-//   try {
-//     // Extract filter parameters from query string
-//     const { sectorType, jobType } = req.query;
-
-//     // Construct query object
-//     const query = {};
-
-//     // Apply sectorType filter if provided
-//     if (sectorType) {
-//       query.sectorType = sector;
-//     }
-
-//     // Apply jobType filter if provided
-//     if (jobType) {
-//       query.jobType = jobType;
-//     }
-
-//     // Query MongoDB based on the constructed query
-//     const jobPosts = await jobPostsCollection.find(query).toArray();
-
-//     // Send the filtered job posts as response
-//     res.json(jobPosts); // Ensure response is in JSON format
-//   } catch (error) {
-//     console.error('Error fetching job posts:', error);
-//     res.status(500).json({ message: 'Server Error' });
-//   }
-// });
-
-/// search functionality
+/// search function
 app.get("/job-Search", async (req, res) => {
   const filter = req.query;
   const query = {
