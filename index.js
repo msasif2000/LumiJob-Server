@@ -161,7 +161,7 @@ app.get('/user', async (req, res) => {
 
 // Delete user
 
-app.delete('/delUser/:id', async (req, res) => {
+app.delete('/delCandidate/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await userCollection.deleteOne(query);
