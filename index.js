@@ -142,6 +142,32 @@ app.get("/users/:email", (req, res) => {
     .catch((err) => console.log(err));
 });
 
+//get all user and user by role
+app.get('/user', async (req, res) => {
+  const role = req.query.role;
+  try {
+    const query = {};
+    if (role) {
+      query.role = role
+    }
+    userCollection.find(query).toArray().then((result) => {
+      res.status(200).send(result);
+    })
+  }
+  catch (error) {
+    res.send({ message: error.message })
+  }
+})
+
+// Delete user
+
+app.delete('/delUser/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await userCollection.deleteOne(query);
+  res.send(result);
+})
+
 app.post("/postJob", async (req, res) => {
   const jobPost = req.body;
   try {
