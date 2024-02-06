@@ -537,7 +537,18 @@ app.delete('/bookmarks/:id', async (req, res) => {
   res.send(result);
 })
 
+//get Company data for Admin Panel
+app.get('/company-data', async (req, res) => {
+  const result = await companyCollection.find({}).toArray();
+  res.send(result);
+})
 
+app.delete('/delete-company/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await companyCollection.deleteOne(query);
+  res.send(result);
+})
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
