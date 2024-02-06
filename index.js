@@ -287,7 +287,7 @@ app.post('/apply-to-jobs', async (req, res) => {
     } else {
       // update applicants list 
       const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) })
-      console.log('job is found', findJob)
+      // console.log('job is found', findJob)
 
       if (!findJob.applicants) {
         findJob.applicants = [];
@@ -296,7 +296,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       if (alreadyApplied) {
         return res.status(200).send({ message: "You have already applied for this job" });
       }
-      console.log(alreadyApplied)
+      // console.log(alreadyApplied)
 
       findJob.applicants.push({ email, appliedTime: new Date() });
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
@@ -346,6 +346,7 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
   }
 })
 
+// deleting job post for companies
 app.delete('/delete-job/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
