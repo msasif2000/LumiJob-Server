@@ -543,6 +543,14 @@ app.get('/company-data', async (req, res) => {
   res.send(result);
 })
 
+//delete jobPost collection when company is deleted
+app.delete('/delete-company-postedJob/:email', async(req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  const result = await jobPostsCollection.deleteMany(query);
+  res.send(result);
+})
+
 app.delete('/delete-company/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
