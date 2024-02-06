@@ -238,10 +238,23 @@ app.get('/specific-company/:email', async (req, res) => {
 // post jobs api because upper api not working
 app.post('/post-jobs', async (req, res) => {
   const data = req.body;
+  const email = req.body.email
   try {
-    const result = await jobPostsCollection.insertOne(data)
-    res.send(result)
-    console.log(result)
+    const company = await userCollection.findOne({ email: email })
+    const canPost = company ? company.canPost : 0;
+
+    const posted = await jobPostsCollection.countDocuments({ email: email })
+
+    if (!company) {
+      return res.status(404).send({ message: "Company not found" });
+    }
+    else if (posted >= canPost) {
+      return res.status(200).send({ message: "Please update subscription" });
+    }
+    else {
+      const result = await jobPostsCollection.insertOne(data)
+      return res.status(200).send({ message: "Job application successful", insertedId: result.insertedId });
+    }
   }
   catch (error) {
     res.send({ message: 'Failed' })
@@ -249,7 +262,7 @@ app.post('/post-jobs', async (req, res) => {
 })
 
 
-// Post users applied jobs to database.
+// Post users applied jobs to database. and update job collection with userData
 
 app.post('/apply-to-jobs', async (req, res) => {
   const job = req.body;
@@ -270,9 +283,35 @@ app.post('/apply-to-jobs', async (req, res) => {
     } else if (alreadyExist) {
       return res.status(200).send({ message: "Already applied" });
     } else {
-      const result = await applyJobsCollection.insertOne(job);
-      console.log(result);
-      return res.status(200).send({ message: "Job application successful", insertedId: result.insertedId });
+      // update applicants list 
+      const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) })
+      console.log('job is found', findJob)
+
+      if (!findJob.applicants) {
+        findJob.applicants = [];
+      }
+      const alreadyApplied = findJob.applicants.some(applicant => applicant.email === email);
+      if (alreadyApplied) {
+        return res.status(200).send({ message: "You have already applied for this job" });
+      }
+      console.log(alreadyApplied)
+
+      findJob.applicants.push({ email, appliedTime: new Date() });
+      const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
+
+      if (result.modifiedCount > 0) {
+        const insert = await applyJobsCollection.insertOne(job);
+        console.log(insert);
+        if (insert.insertedId) {
+          return res.status(200).send({ message: "Job application successful", insertedId: insert.insertedId });
+        } else {
+          return res.status(500).send({ message: 'Failed to apply for the job' });
+        }
+      } else {
+        return res.status(500).send({ message: 'Failed to apply for the job' });
+      }
+
+
     }
   } catch (error) {
     console.error(error);
@@ -293,6 +332,29 @@ app.get('/get-applied-jobs/:email', async (req, res) => {
   }
 })
 
+app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  try {
+    const result = await jobPostsCollection.find(query).toArray()
+    res.send(result)
+  }
+  catch (error) {
+    res.status(404).send({ message: 'error' })
+  }
+})
+
+app.delete('/delete-job/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  try {
+    const result = await jobPostsCollection.findOneAndDelete(query)
+    res.send({ message: 'true' })
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
 
 
 //get seminars data
