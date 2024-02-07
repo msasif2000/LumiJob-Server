@@ -129,6 +129,13 @@ app.get("/check-which-role/:email", async (req, res) => {
   }
 });
 
+// ----get all user for admin--
+
+app.get("/allUsers", async (req, res) => {
+  const allUsers = await userCollection.find({}).toArray();
+  res.send(allUsers);
+});
+
 
 //get user data
 app.get("/users/:email", (req, res) => {
