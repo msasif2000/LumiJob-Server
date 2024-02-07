@@ -586,6 +586,29 @@ app.delete('/delete-company/:id', async (req, res) => {
   res.send(result);
 })
 
+//admin  =  posted jobs delate
+app.delete('/delete-jobs/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await jobPostsCollection.deleteOne(query);
+  res.send(result);
+})
+
+//admin  =  posted jobs delate bookmarkCollections
+app.delete('/delete-jobs-bookmarks/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { userId: id }
+  const result = await bookmarksCollection.deleteOne(query);
+  res.send(result);
+})
+
+//admin  =  posted jobs delate applyJobsCollection
+app.delete('/delete-jobs-applyJobsCollection/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { jobId: id }
+  const result = await applyJobsCollection.deleteOne(query);
+  res.send(result);
+})
 // stripe 
 
 // payment intent
