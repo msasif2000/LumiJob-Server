@@ -3,6 +3,7 @@ require("dotenv").config();
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 
@@ -320,7 +321,7 @@ app.post('/apply-to-jobs', async (req, res) => {
     } else {
       // update applicants list 
       const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) })
-      // console.log('job is found', findJob)
+      console.log('job is found', findJob)
 
       if (!findJob.applicants) {
         findJob.applicants = [];
@@ -329,7 +330,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       if (alreadyApplied) {
         return res.status(200).send({ message: "You have already applied for this job" });
       }
-      // console.log(alreadyApplied)
+      console.log(alreadyApplied)
 
       findJob.applicants.push({ email, appliedTime: new Date() });
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
@@ -379,7 +380,6 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
   }
 })
 
-// deleting job post for companies
 app.delete('/delete-job/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
@@ -520,6 +520,8 @@ app.get("/job-Search", async (req, res) => {
 
 
 
+
+
 //-----pagination-----
 
 // pagination api
@@ -577,14 +579,6 @@ app.get('/company-data', async (req, res) => {
   res.send(result);
 })
 
-//delete jobPost collection when company is deleted
-app.delete('/delete-company-postedJob/:email', async(req, res) => {
-  const email = req.params.email;
-  const query = { email: email }
-  const result = await jobPostsCollection.deleteMany(query);
-  res.send(result);
-})
-
 app.delete('/delete-company/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
@@ -615,6 +609,25 @@ app.delete('/delete-jobs-applyJobsCollection/:id', async (req, res) => {
   const result = await applyJobsCollection.deleteOne(query);
   res.send(result);
 })
+// stripe 
+
+// payment intent
+
+app.post("/create-payment-intent", async (req, res) => {
+  const { price } = req.body;
+  const amount = parseInt(price * 100);
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: amount,
+    currency: "usd",
+    payment_method_types: ['card']
+  })
+
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
+})
+
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
