@@ -46,6 +46,7 @@ const seminarsCollection = client.db("lumijob").collection("Seminar");
 const blogsCollection = client.db("lumijob").collection("Blogpost");
 const bookmarksCollection = client.db("lumijob").collection("bookmarks");
 const applyJobsCollection = client.db("lumijob").collection("appliedJobs");
+const subscriptionCollection = client.db("lumijob").collection("subscriptions");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -609,7 +610,10 @@ app.delete('/delete-jobs-applyJobsCollection/:id', async (req, res) => {
   const result = await applyJobsCollection.deleteOne(query);
   res.send(result);
 })
-// stripe 
+
+
+
+// =======>>> stripe payment <<<=======
 
 // payment intent
 
@@ -627,6 +631,15 @@ app.post("/create-payment-intent", async (req, res) => {
     clientSecret: paymentIntent.client_secret,
   });
 })
+
+// Subscription data insert to database
+
+app.post('/payments', async (req, res) => {
+  const payment = req.body;
+  const paymentResult = await subscriptionCollection.insertOne(payment);
+  res.send({ paymentResult })
+})
+
 
 
 app.listen(port, () => {
