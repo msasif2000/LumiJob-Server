@@ -445,7 +445,7 @@ app.get("/user-profile/:email", async (req, res) => {
 //get all job post data
 app.get('/all-job-posts', async (req, res) => {
   try {
-    const result = await jobPostsCollection.find({}).toArray();
+    const result = (await jobPostsCollection.find({}).sort({post_time: -1}).toArray());
     res.send(result)
   }
   catch (error) {
