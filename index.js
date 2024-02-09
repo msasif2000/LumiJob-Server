@@ -472,7 +472,7 @@ app.get('/filter-job-posts', async (req, res) => {
       query.jobType = { $in: types };
     }
 
-    const result = await jobPostsCollection.find(query).toArray();
+    const result = await jobPostsCollection.find(query).sort({post_time: -1}).toArray();
     res.send(result);
   } catch (error) {
     res.status(500).send({ message: 'Error fetching data' });
