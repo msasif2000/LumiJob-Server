@@ -644,35 +644,94 @@ app.post("/create-payment-intent", async (req, res) => {
 })
 
 // Subscription data insert to database
-
 app.post('/payments', async (req, res) => {
   const payment = req.body;
-  const paymentResult = await subscriptionCollection.insertOne(payment);
-  res.send({ paymentResult })
-})
+  const canPost = req.body.canPost;
+  const email = req.body.email;
+  const package = req.body.package;
+  const status = req.body.userStatus
+  const options = { upsert: true }
+  const role = req.body.userRole
+  try {
+    const paymentResult = await subscriptionCollection.insertOne(payment);
 
+    const del = await temporaryCollection.deleteOne({ user: email });
+  
 
-app.post('/subscription', async(req,res)=>{
-  const data = req.body;
-  try{
-    const store = await temporaryCollection.insertOne(data)
-    res.send({message: 'data inserted'})
-    console.log(store)
+    const updateUser = await userCollection.findOneAndUpdate(
+      { email: email },
+      { $set: { status, package, canPost } },
+      options
+    );
+   
+
+    let update;
+    if (role === 'company') {
+      update = await companyCollection.findOneAndUpdate({ email: email }, { $set: { status, package } }, options);
+     
+    } else if (role === 'candidate') {
+      update = await candidateCollection.findOneAndUpdate({ email: email }, { $set: { status, package } }, options);
+     
+    } else {
+      console.log('not upgraded');
+    }
+
+    res.send({paymentResult});
   }
-  catch(error){
+  catch (error) {
+    console.log(error)
+    res.send(error)
+  }
+});
+
+
+
+app.post('/subscription', async (req, res) => {
+  const data = req.body;
+  const email = req.body.user;
+  const query = { user: email }
+  try {
+
+    const exist = await temporaryCollection.findOne(query)
+
+    if (exist) {
+      res.send({ message: 'already have selected plan' })
+    }
+    else {
+
+      const store = await temporaryCollection.insertOne(data)
+      res.send({ message: 'data inserted' })
+      // console.log(store)
+    }
+  }
+  catch (error) {
     res.send(error)
   }
 })
 
-app.get('/get-subs-details/:email',async(req,res)=>{
+// get subscription details in payment page
+app.get('/get-subs-details/:email', async (req, res) => {
   const email = req.params.email;
-  const query = {user: email}
-  try{
+  const query = { user: email }
+  try {
     const result = await temporaryCollection.findOne(query)
+    res.send(result)
+    // console.log(result)
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+app.delete('/delete-subs-plan/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  try {
+    const result = await temporaryCollection.deleteOne(query)
     res.send(result)
     console.log(result)
   }
-  catch(error){
+  catch (error) {
     res.send(error)
   }
 })
