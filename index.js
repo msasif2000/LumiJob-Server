@@ -47,6 +47,7 @@ const blogsCollection = client.db("lumijob").collection("Blogpost");
 const bookmarksCollection = client.db("lumijob").collection("bookmarks");
 const applyJobsCollection = client.db("lumijob").collection("appliedJobs");
 const subscriptionCollection = client.db("lumijob").collection("subscriptions");
+const temporaryCollection = client.db("lumijob").collection("temporary");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -651,6 +652,30 @@ app.post('/payments', async (req, res) => {
 })
 
 
+app.post('/subscription', async(req,res)=>{
+  const data = req.body;
+  try{
+    const store = await temporaryCollection.insertOne(data)
+    res.send({message: 'data inserted'})
+    console.log(store)
+  }
+  catch(error){
+    res.send(error)
+  }
+})
+
+app.get('/get-subs-details/:email',async(req,res)=>{
+  const email = req.params.email;
+  const query = {user: email}
+  try{
+    const result = await temporaryCollection.findOne(query)
+    res.send(result)
+    console.log(result)
+  }
+  catch(error){
+    res.send(error)
+  }
+})
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
