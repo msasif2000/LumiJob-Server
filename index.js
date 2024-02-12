@@ -260,6 +260,20 @@ app.get('/specific-candidate/:email', async (req, res) => {
   }
 })
 
+app.get("/candidate-profile/:id", async (req, res) => {
+  const id = req.params.id;
+  console.log("Received params:", req.params);
+  const query = { _id: new ObjectId(id) };
+  try {
+    const result = await companyCollection.findOne(query);
+    res.send(result);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
+
 // get specific company data from company collection
 app.get('/specific-company/:email', async (req, res) => {
   const email = req.params.email;
