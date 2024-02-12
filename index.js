@@ -385,10 +385,16 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
   }
 })
 
+
+// job deleting api for company
 app.delete('/delete-job/:id', async (req, res) => {
   const id = req.params.id;
+  const querry = { _id: id }
   const query = { _id: new ObjectId(id) }
+  // console.log(query)
   try {
+    const deleteApplied = await applyJobsCollection.findOneAndDelete(querry)
+
     const result = await jobPostsCollection.findOneAndDelete(query)
     res.send({ message: 'true' })
   }
