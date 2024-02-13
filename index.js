@@ -260,19 +260,8 @@ app.get('/specific-candidate/:email', async (req, res) => {
   }
 })
 
-app.get("/candidate-profile/:id", async (req, res) => {
-  const id = req.params.id;
-  console.log("Received params:", req.params);
-  const query = { _id: new ObjectId(id) };
-  try {
-    const result = await companyCollection.findOne(query);
-    res.send(result);
-  }
-  catch (error) {
-    console.error(error);
-    res.status(500).send(error);
-  }
-});
+
+
 
 // get specific company data from company collection
 app.get('/specific-company/:email', async (req, res) => {
@@ -285,6 +274,23 @@ app.get('/specific-company/:email', async (req, res) => {
     res.send({ message: 'Failed' })
   }
 })
+
+
+// specific company by their id (used in company detail which will be open for all user)
+
+app.get("/company-profile/:id", async (req, res) => {
+  const id = req.params.id;
+  // console.log("Received params:", req.params);
+  const query = { _id: new ObjectId(id) };
+  try {
+    const result = await companyCollection.findOne(query);
+    res.send(result);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
 
 // post jobs api because upper api not working
