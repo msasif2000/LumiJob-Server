@@ -667,6 +667,7 @@ app.post("/create-payment-intent", async (req, res) => {
 app.post('/payments', async (req, res) => {
   const payment = req.body;
   const canPost = req.body.canPost;
+  const canApply = req.body.canApply;
   const email = req.body.email;
   const package = req.body.package;
   const status = req.body.userStatus
@@ -676,27 +677,35 @@ app.post('/payments', async (req, res) => {
     const paymentResult = await subscriptionCollection.insertOne(payment);
 
     const del = await temporaryCollection.deleteOne({ user: email });
-  
 
-    const updateUser = await userCollection.findOneAndUpdate(
-      { email: email },
-      { $set: { status, package, canPost } },
-      options
-    );
-   
+
+    if (role === 'company') {
+      const updateUser = await userCollection.findOneAndUpdate(
+        { email: email },
+        { $set: { status, package, canPost } },
+        options
+      );
+    }
+    else {
+      const updateUser = await userCollection.findOneAndUpdate(
+        { email: email },
+        { $set: { status, package, canApply } },
+        options
+      );
+    }
 
     let update;
     if (role === 'company') {
       update = await companyCollection.findOneAndUpdate({ email: email }, { $set: { status, package } }, options);
-     
+
     } else if (role === 'candidate') {
       update = await candidateCollection.findOneAndUpdate({ email: email }, { $set: { status, package } }, options);
-     
+
     } else {
       console.log('not upgraded');
     }
 
-    res.send({paymentResult});
+    res.send({ paymentResult });
   }
   catch (error) {
     console.log(error)
