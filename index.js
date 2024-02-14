@@ -461,6 +461,14 @@ app.get("/get-posted-blogs/:email", async (req, res) => {
   }
 })
 
+//delete blog
+app.delete('/delete-blog/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await blogsCollection.deleteOne(query);
+  res.send(result);
+})
+
 //get single blog data
 app.get("/single-blog/:id", async (req, res) => {
   const id = req.params.id;
