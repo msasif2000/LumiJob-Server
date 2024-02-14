@@ -563,6 +563,20 @@ app.get('/all-candidate-data', async (req, res) => {
   }
 })
 
+app.get('/single-candidate/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+
+  try {
+    const result = await candidateCollection.findOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+
+})
+
 
 
 //-----pagination-----
