@@ -448,6 +448,19 @@ app.get("/blogs", async (req, res) => {
   res.send(blogs);
 });
 
+//get blog by company
+app.get("/get-posted-blogs/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const result = await blogsCollection.find(query).toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
 //get single blog data
 app.get("/single-blog/:id", async (req, res) => {
   const id = req.params.id;
