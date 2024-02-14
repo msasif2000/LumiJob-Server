@@ -551,6 +551,17 @@ app.get("/job-Search", async (req, res) => {
 });
 
 
+// findCandidate related works 
+
+app.get('/all-candidate-data', async (req, res) => {
+  try {
+    const result = (await candidateCollection.find({}).sort({ post_time: -1 }).toArray());
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+})
 
 
 
