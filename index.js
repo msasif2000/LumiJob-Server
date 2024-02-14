@@ -424,6 +424,17 @@ app.delete('/delete-job/:id', async (req, res) => {
   }
 })
 
+//post blog data
+app.post("/post-the-blog", async(req, res ) => {
+  const blog = req.body;
+  try {
+    const postBlog = await blogsCollection.insertOne(blog);
+    res.send(postBlog);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
 
 //get seminars data
 app.get("/seminars", async (req, res) => {
@@ -436,6 +447,27 @@ app.get("/blogs", async (req, res) => {
   const blogs = await blogsCollection.find({}).toArray();
   res.send(blogs);
 });
+
+//get blog by company
+app.get("/get-posted-blogs/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const result = await blogsCollection.find(query).toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+//delete blog
+app.delete('/delete-blog/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await blogsCollection.deleteOne(query);
+  res.send(result);
+})
 
 //get single blog data
 app.get("/single-blog/:id", async (req, res) => {
