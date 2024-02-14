@@ -424,6 +424,17 @@ app.delete('/delete-job/:id', async (req, res) => {
   }
 })
 
+//post blog data
+app.post("/post-the-blog", async(req, res ) => {
+  const blog = req.body;
+  try {
+    const postBlog = await blogsCollection.insertOne(blog);
+    res.send(postBlog);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
 
 //get seminars data
 app.get("/seminars", async (req, res) => {
