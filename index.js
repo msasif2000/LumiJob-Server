@@ -139,7 +139,7 @@ app.get("/allUsers", async (req, res) => {
   res.send(allUsers);
 });
 
-
+// get all candidates from candidateCollection
 app.get("/candidates", async (req, res) => {
   const allCandidates = await candidateCollection.find({}).toArray();
   res.send(allCandidates);
@@ -266,18 +266,26 @@ app.get('/specific-candidate/:email', async (req, res) => {
   }
 })
 
+
 // Get skills data by candidate email
-app.get('/getCandidateSkills', async (req, res) => {
+app.get('/getMatchJobs', async (req, res) => {
   const email = req.query.email;
   try {
-    const result = await candidateCollection.findOne({ email }, { projection: { _id: 0, skills: 1 } });
-    if (result) {
-      res.json(result.skills);
+    const candidateSkills = await candidateCollection.findOne({ email }, { projection: { _id: 0, skills: 1 } });
+
+    console.log(candidateSkills?.skills);
+
+    const matchingJobs = await jobPostsCollection.find({
+      requiredSkills: { $in: candidateSkills?.skills }
+    }).toArray();
+
+    if (matchingJobs) {
+      res.json(matchingJobs);
     } else {
-      res.status(404).json({ message: 'No candidate found with that email' });
+      res.status(404).json({ message: 'No Matching Jobs found with that email' });
     }
   } catch (error) {
-    console.error('Error finding skills:', error);
+    console.error('Error finding Matching Jobs:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
