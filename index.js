@@ -413,6 +413,10 @@ app.get(`/company-postedJobs/:email`, async(req, res) => {
     const result = await jobPostsCollection.find(query).toArray();
     res.send(result); 
   }
+  catch(error) 
+  {
+    res.status(404).send({message : error})
+  }
 
 })
 
