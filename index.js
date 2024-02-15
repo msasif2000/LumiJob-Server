@@ -140,6 +140,12 @@ app.get("/allUsers", async (req, res) => {
 });
 
 
+app.get("/candidates", async (req, res) => {
+  const allCandidates = await candidateCollection.find({}).toArray();
+  res.send(allCandidates);
+});
+
+
 //get user data
 app.get("/users/:email", (req, res) => {
   const email = req.params.email;
@@ -259,6 +265,22 @@ app.get('/specific-candidate/:email', async (req, res) => {
     res.send({ message: 'Failed' })
   }
 })
+
+// Get skills data by candidate email
+app.get('/getCandidateSkills', async (req, res) => {
+  const email = req.query.email;
+  try {
+    const result = await candidateCollection.findOne({ email }, { projection: { _id: 0, skills: 1 } });
+    if (result) {
+      res.json(result.skills);
+    } else {
+      res.status(404).json({ message: 'No candidate found with that email' });
+    }
+  } catch (error) {
+    console.error('Error finding skills:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 
 
