@@ -424,6 +424,14 @@ app.delete('/delete-job/:id', async (req, res) => {
   }
 })
 
+
+
+//get seminars data
+app.get("/seminars", async (req, res) => {
+  const seminars = await seminarsCollection.find({}).toArray();
+  res.send(seminars);
+});
+
 //post blog data
 app.post("/post-the-blog", async(req, res ) => {
   const blog = req.body;
@@ -436,12 +444,19 @@ app.post("/post-the-blog", async(req, res ) => {
   }
 })
 
-//get seminars data
-app.get("/seminars", async (req, res) => {
-  const seminars = await seminarsCollection.find({}).toArray();
-  res.send(seminars);
-});
-
+//update blog data
+app.patch('/update-blog/:id', async(req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const update = req.body;
+  try {
+    const result = await blogsCollection.findOneAndUpdate(query, { $set: update });
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
 //get blog data
 app.get("/blogs", async (req, res) => {
   const blogs = await blogsCollection.find({}).toArray();
@@ -473,9 +488,6 @@ app.delete('/delete-blog/:id', async (req, res) => {
 app.get("/single-blog/:id", async (req, res) => {
   const id = req.params.id;
   console.log("Received params:", req.params);
-  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
-    return res.status(400).send({ message: 'Invalid ObjectId' });
-  }
   const query = { _id: new ObjectId(id) };
   try {
     const blogs = await blogsCollection.findOne(query);
