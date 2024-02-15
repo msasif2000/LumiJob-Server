@@ -596,7 +596,7 @@ app.get("/job-Search", async (req, res) => {
 });
 
 
-// findCandidate related works 
+// findCandidate related works --------------------
 
 app.get('/all-candidate-data', async (req, res) => {
   try {
@@ -621,6 +621,34 @@ app.get('/single-candidate/:id', async (req, res) => {
   }
 
 })
+
+// candidate search 
+
+app.get("/candidate-Search", async (req, res) => {
+  const filter = req.query;
+  const query = {
+    $or: [
+      { name: { $regex: filter.search, $options: "i" } },
+      { position: { $regex: filter.search, $options: "i" } }
+    ]
+  };
+
+  try {
+    const userExist = await candidateCollection.findOne(query);
+    if (!userExist) {
+      return res.status(409).send({ message: "User not found" });
+    }
+    const cursor = candidateCollection.find(query);
+    const result = await cursor.toArray();
+    res.status(201).send(result);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+
+// find candidate related code end -------------------
 
 
 
