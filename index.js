@@ -407,7 +407,8 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
 })
 // company profile posted jobs
 app.get(`/get-company-postedJobs/:email`, async(req, res) => {
-  
+  const email = req.params.email;
+  const query = {email : email};
 })
 
 // job deleting api for company
