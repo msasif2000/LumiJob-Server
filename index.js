@@ -405,7 +405,10 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
     res.status(404).send({ message: 'error' })
   }
 })
-
+// company profile posted jobs
+app.get(`/get-company-postedJobs/:email`, async(req, res) => {
+  
+})
 
 // job deleting api for company
 app.delete('/delete-job/:id', async (req, res) => {
