@@ -139,6 +139,12 @@ app.get("/allUsers", async (req, res) => {
   res.send(allUsers);
 });
 
+// get all candidates from candidateCollection
+app.get("/candidates", async (req, res) => {
+  const allCandidates = await candidateCollection.find({}).toArray();
+  res.send(allCandidates);
+});
+
 
 //get user data
 app.get("/users/:email", (req, res) => {
@@ -259,6 +265,33 @@ app.get('/specific-candidate/:email', async (req, res) => {
     res.send({ message: 'Failed' })
   }
 })
+
+
+// Get skills data by candidate email
+app.get('/matchingJobs', async (req, res) => {
+  const email = req.query.email;
+  try {
+    const candidateSkills = await candidateCollection.findOne({ email }, { projection: { _id: 0, skills: 1 } });
+
+    if (!candidateSkills) {
+      return res.status(404).json({ message: 'Candidate not found with that email' });
+    }
+
+    const matchingJobs = await jobPostsCollection.find({
+      requiredSkills: { $in: candidateSkills.skills }
+    }).toArray();
+
+    if (matchingJobs.length > 0) {
+      res.json(matchingJobs);
+    } else {
+      res.status(404).json({ message: 'No Matching Jobs found for the candidate' });
+    }
+  } catch (error) {
+    console.error('Error finding Matching Jobs:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 
 
