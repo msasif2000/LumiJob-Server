@@ -626,10 +626,12 @@ app.get('/single-candidate/:id', async (req, res) => {
 
 app.get("/candidate-Search", async (req, res) => {
   const filter = req.query;
+  const searchRegex = new RegExp(filter.search, 'i');
   const query = {
     $or: [
-      { name: { $regex: filter.search, $options: "i" } },
-      { position: { $regex: filter.search, $options: "i" } }
+      { name: { $regex: searchRegex } },
+      { position: { $regex: searchRegex } }, 
+      { skills: { $elemMatch: { $regex: searchRegex } } } 
     ]
   };
 
