@@ -478,6 +478,19 @@ app.get("/seminars", async (req, res) => {
   res.send(seminars);
 });
 
+//get seminar by company 
+app.get("/get-posted-Seminars/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const result = await blogsCollection.find(query).toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
 //post blog data
 app.post("/post-the-blog", async(req, res ) => {
   const blog = req.body;
