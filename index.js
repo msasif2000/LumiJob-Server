@@ -471,12 +471,44 @@ app.delete('/delete-job/:id', async (req, res) => {
 })
 
 
+//post the Seminar data
+app.post("/post-the-seminar", async (req, res) => {
+  const seminar = req.body;
+  try {
+    const postSeminar = await seminarsCollection.insertOne(seminar);
+    res.send(postSeminar);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
 
 //get seminars data
 app.get("/seminars", async (req, res) => {
   const seminars = await seminarsCollection.find({}).toArray();
   res.send(seminars);
 });
+
+//get seminar by company 
+app.get("/get-posted-Seminars/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const result = await seminarsCollection.find(query).toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+//delete seminar
+app.delete('/delete-seminar/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await seminarsCollection.deleteOne(query);
+  res.send(result);
+})
 
 //post blog data
 app.post("/post-the-blog", async(req, res ) => {
