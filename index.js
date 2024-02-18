@@ -438,7 +438,20 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
     res.status(404).send({ message: 'error' })
   }
 })
+// company profile posted jobs
+app.get(`/company-postedJobs/:email`, async(req, res) => {
+  const email = req.params.email;
+  const query = {email : email};
+  try{
+    const result = await jobPostsCollection.find(query).toArray();
+    res.send(result); 
+  }
+  catch(error) 
+  {
+    res.status(404).send({message : error})
+  }
 
+})
 
 // job deleting api for company
 app.delete('/delete-job/:id', async (req, res) => {
@@ -458,25 +471,101 @@ app.delete('/delete-job/:id', async (req, res) => {
 })
 
 
+//post the Seminar data
+app.post("/post-the-seminar", async (req, res) => {
+  const seminar = req.body;
+  try {
+    const postSeminar = await seminarsCollection.insertOne(seminar);
+    res.send(postSeminar);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
 //get seminars data
 app.get("/seminars", async (req, res) => {
   const seminars = await seminarsCollection.find({}).toArray();
   res.send(seminars);
 });
 
+//get seminar by company 
+app.get("/get-posted-Seminars/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const result = await seminarsCollection.find(query).toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+//delete seminar
+app.delete('/delete-seminar/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await seminarsCollection.deleteOne(query);
+  res.send(result);
+})
+
+//post blog data
+app.post("/post-the-blog", async(req, res ) => {
+  const blog = req.body;
+  try {
+    const postBlog = await blogsCollection.insertOne(blog);
+    res.send(postBlog);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+//update blog data
+app.patch('/update-blog/:id', async(req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const update = req.body;
+  try {
+    const result = await blogsCollection.findOneAndUpdate(query, { $set: update });
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
 //get blog data
 app.get("/blogs", async (req, res) => {
   const blogs = await blogsCollection.find({}).toArray();
   res.send(blogs);
 });
 
+//get blog by company
+app.get("/get-posted-blogs/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const result = await blogsCollection.find(query).toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+//delete blog
+app.delete('/delete-blog/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await blogsCollection.deleteOne(query);
+  res.send(result);
+})
+
 //get single blog data
 app.get("/single-blog/:id", async (req, res) => {
   const id = req.params.id;
   console.log("Received params:", req.params);
-  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
-    return res.status(400).send({ message: 'Invalid ObjectId' });
-  }
   const query = { _id: new ObjectId(id) };
   try {
     const blogs = await blogsCollection.findOne(query);
@@ -584,6 +673,61 @@ app.get("/job-Search", async (req, res) => {
 });
 
 
+// findCandidate related works --------------------
+
+app.get('/all-candidate-data', async (req, res) => {
+  try {
+    const result = (await candidateCollection.find({}).sort({ post_time: -1 }).toArray());
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+})
+
+app.get('/single-candidate/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+
+  try {
+    const result = await candidateCollection.findOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+
+})
+
+// candidate search 
+
+app.get("/candidate-Search", async (req, res) => {
+  const filter = req.query;
+  const searchRegex = new RegExp(filter.search, 'i');
+  const query = {
+    $or: [
+      { name: { $regex: searchRegex } },
+      { position: { $regex: searchRegex } }, 
+      { skills: { $elemMatch: { $regex: searchRegex } } } 
+    ]
+  };
+
+  try {
+    const userExist = await candidateCollection.findOne(query);
+    if (!userExist) {
+      return res.status(409).send({ message: "User not found" });
+    }
+    const cursor = candidateCollection.find(query);
+    const result = await cursor.toArray();
+    res.status(201).send(result);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
+
+// find candidate related code end -------------------
 
 
 
