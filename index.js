@@ -471,6 +471,17 @@ app.delete('/delete-job/:id', async (req, res) => {
 })
 
 
+//post the Seminar data
+app.post("/post-the-seminar", async (req, res) => {
+  const seminar = req.body;
+  try {
+    const postSeminar = await seminarsCollection.insertOne(seminar);
+    res.send(postSeminar);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
 
 //get seminars data
 app.get("/seminars", async (req, res) => {
