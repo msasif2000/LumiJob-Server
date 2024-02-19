@@ -1040,5 +1040,42 @@ app.get('/dnd-selected/:id', async (req, res) => {
   }
 });
 
+app.put('/updateApplicantsStatus/:id', async (req, res) => {
+  const { id } = req.params;
+  const { dndStats, jobId} = req.body;
+  console.log(id, jobId, dndStats);
+
+  try {
+    // Find the job document by its id
+    const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) });
+
+    // Check if the job exists
+    if (!findJob) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    // Find the applicant by their email
+    const applicantIndex = findJob.applicants.findIndex(applicant => applicant.email === id);
+
+    // Check if the applicant exists
+    if (applicantIndex === -1) {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+
+    // Update the dndStats of the applicant
+    findJob.applicants[applicantIndex].dndStats = dndStats;
+
+    // Update the job document in the database
+    await jobPostsCollection.updateOne(
+      { _id: new ObjectId(jobId) },
+      { $set: { applicants: findJob.applicants } }
+    );
+
+    return res.status(200).json({ message: 'Applicant status updated successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
