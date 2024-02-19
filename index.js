@@ -389,6 +389,10 @@ app.post('/apply-to-jobs', async (req, res) => {
 
       const userDetails = await candidateCollection.findOne({ email: email })
 
+      if(!userDetails){
+        return res.send({message: 'Please fill profile information'})
+      }
+
       const id = userDetails?._id
       const name = userDetails?.name
       const profile = userDetails?.photo
@@ -1061,6 +1065,9 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
           { _id: new ObjectId(jobId), "applicants.id": new ObjectId(id) },
           { $set: { "applicants.$.dndStats": dndStats } }
       );
+
+      const appliedJobsStats = await applyJobsCollection.findOneAndUpdate({jobId: jobId},{$set:{status: dndStats}})
+      console.log(appliedJobsStats)
 
       return res.status(200).json({ message: 'Applicant status updated successfully' });
   } catch (error) {
