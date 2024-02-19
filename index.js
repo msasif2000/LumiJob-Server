@@ -267,7 +267,7 @@ app.get('/specific-candidate/:email', async (req, res) => {
 })
 
 
-// Get skills data by candidate email
+// Get matchingJobs data by candidate email
 app.get('/matchingJobs', async (req, res) => {
   const email = req.query.email;
   try {
