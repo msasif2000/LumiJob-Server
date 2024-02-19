@@ -439,16 +439,15 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
   }
 })
 // company profile posted jobs
-app.get(`/company-postedJobs/:email`, async(req, res) => {
+app.get(`/company-postedJobs/:email`, async (req, res) => {
   const email = req.params.email;
-  const query = {email : email};
-  try{
+  const query = { email: email };
+  try {
     const result = await jobPostsCollection.find(query).toArray();
-    res.send(result); 
+    res.send(result);
   }
-  catch(error) 
-  {
-    res.status(404).send({message : error})
+  catch (error) {
+    res.status(404).send({ message: error })
   }
 
 })
@@ -511,7 +510,7 @@ app.delete('/delete-seminar/:id', async (req, res) => {
 })
 
 //post blog data
-app.post("/post-the-blog", async(req, res ) => {
+app.post("/post-the-blog", async (req, res) => {
   const blog = req.body;
   try {
     const postBlog = await blogsCollection.insertOne(blog);
@@ -523,7 +522,7 @@ app.post("/post-the-blog", async(req, res ) => {
 })
 
 //update blog data
-app.patch('/update-blog/:id', async(req, res) => {
+app.patch('/update-blog/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const update = req.body;
@@ -707,8 +706,8 @@ app.get("/candidate-Search", async (req, res) => {
   const query = {
     $or: [
       { name: { $regex: searchRegex } },
-      { position: { $regex: searchRegex } }, 
-      { skills: { $elemMatch: { $regex: searchRegex } } } 
+      { position: { $regex: searchRegex } },
+      { skills: { $elemMatch: { $regex: searchRegex } } }
     ]
   };
 
@@ -945,3 +944,100 @@ app.delete('/delete-subs-plan/:id', async (req, res) => {
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
+
+
+// Apis for dnd
+
+app.get('/dnd-applicants/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+
+  try {
+    const result = await jobPostsCollection.aggregate([
+      { $match: query },
+      { $unwind: '$applicants' },
+      { $match: { 'applicants.dndStats': 'applicant' } }, 
+      { $group: { _id: '$_id', applicants: { $push: '$applicants' } } }
+    ]).toArray();
+
+    if (result.length > 0) {
+      res.send(result[0].applicants); 
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+app.get('/dnd-pre-select/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+
+  try {
+    const result = await jobPostsCollection.aggregate([
+      { $match: query },
+      { $unwind: '$applicants' },
+      { $match: { 'applicants.dndStats': 'pre-selected' } }, 
+      { $group: { _id: '$_id', applicants: { $push: '$applicants' } } }
+    ]).toArray();
+
+    if (result.length > 0) {
+      res.send(result[0].applicants); 
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+app.get('/dnd-interview/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+
+  try {
+    const result = await jobPostsCollection.aggregate([
+      { $match: query },
+      { $unwind: '$applicants' },
+      { $match: { 'applicants.dndStats': 'interview' } }, 
+      { $group: { _id: '$_id', applicants: { $push: '$applicants' } } }
+    ]).toArray();
+
+    if (result.length > 0) {
+      res.send(result[0].applicants); 
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+app.get('/dnd-selected/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+
+  try {
+    const result = await jobPostsCollection.aggregate([
+      { $match: query },
+      { $unwind: '$applicants' },
+      { $match: { 'applicants.dndStats': 'selected' } }, 
+      { $group: { _id: '$_id', applicants: { $push: '$applicants' } } }
+    ]).toArray();
+
+    if (result.length > 0) {
+      res.send(result[0].applicants); 
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+
