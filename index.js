@@ -1062,6 +1062,9 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
           { $set: { "applicants.$.dndStats": dndStats } }
       );
 
+      const appliedJobsStats = await applyJobsCollection.findOneAndUpdate({jobId: jobId},{$set:{status: dndStats}})
+      console.log(appliedJobsStats)
+
       return res.status(200).json({ message: 'Applicant status updated successfully' });
   } catch (error) {
       console.error(error);
