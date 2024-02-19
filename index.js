@@ -390,8 +390,9 @@ app.post('/apply-to-jobs', async (req, res) => {
       const userDetails = await userCollection.findOne({ email: email })
       const profile = userDetails?.photo
       const name = userDetails?.name
+      const dndStats = 'applicant'
 
-      findJob.applicants.push({ email, name, profile, appliedTime: new Date() });
+      findJob.applicants.push({ email, name, profile, appliedTime: new Date(), dndStats });
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
 
       if (result.modifiedCount > 0) {
