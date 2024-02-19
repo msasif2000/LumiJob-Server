@@ -389,6 +389,10 @@ app.post('/apply-to-jobs', async (req, res) => {
 
       const userDetails = await candidateCollection.findOne({ email: email })
 
+      if(!userDetails){
+        return res.send({message: 'Please fill profile information'})
+      }
+
       const id = userDetails?._id
       const name = userDetails?.name
       const profile = userDetails?.photo
