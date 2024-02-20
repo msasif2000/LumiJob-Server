@@ -2,13 +2,6 @@
 
 This documentation provides an overview of the backend architecture, APIs, and functionality of the LumiJob application.
 
-## Table of Contents
-1. [Introduction](#introduction)
-2. [Technologies Used](#technologies-used)
-3. [Setup](#setup)
-4. [API Endpoints](#api-endpoints)
-5. [Stripe Integration](#stripe-integration)
-6. [DND (Drag and Drop) Feature](#dnd-feature)
 
 ## Introduction
 The backend of the LumiJob application serves as the server-side infrastructure responsible for handling client requests, managing databases, and integrating third-party services like Stripe for payment processing. It provides various APIs for user authentication, job posting, candidate search, seminar posting, blog posting, and more.
@@ -25,7 +18,7 @@ The backend of the LumiJob application serves as the server-side infrastructure 
 
 ## Setup
 To set up the backend locally, follow these steps:
-1. Clone the repository from [GitHub Repository Link](#) to your local machine.
+1. Clone the repository from https://github.com/msasif2000/LumiJob-Server to your local machine.
 2. Navigate to the backend directory.
 3. Run `npm install` to install dependencies.
 4. Create a `.env` file in the root directory and add necessary environment variables from MongoDB
