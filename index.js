@@ -389,8 +389,8 @@ app.post('/apply-to-jobs', async (req, res) => {
 
       const userDetails = await candidateCollection.findOne({ email: email })
 
-      if(!userDetails){
-        return res.send({message: 'Please fill profile information'})
+      if (!userDetails) {
+        return res.send({ message: 'Please fill profile information' })
       }
 
       const id = userDetails?._id
@@ -943,6 +943,18 @@ app.get('/get-subs-details/:email', async (req, res) => {
   }
 })
 
+// get payment info
+
+app.get('/payment', async (req, res) => {
+  try {
+    const result = await subscriptionCollection.find().toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
 app.delete('/delete-subs-plan/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
@@ -1043,35 +1055,35 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
   console.log(id, jobId, dndStats);
 
   try {
-      const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) });
-    
-      if (!findJob) {
-          return res.status(404).json({ error: 'Job not found' });
-      }
+    const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) });
 
-     
-      const applicantIndex = findJob.applicants.findIndex(applicant => applicant.id.toString() === id);
+    if (!findJob) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
 
-    
-      if (applicantIndex === -1) {
-          return res.status(404).json({ error: 'Applicant not found' });
-      }
 
-     
-      findJob.applicants[applicantIndex].dndStats = dndStats;
+    const applicantIndex = findJob.applicants.findIndex(applicant => applicant.id.toString() === id);
 
-     
-      await jobPostsCollection.updateOne(
-          { _id: new ObjectId(jobId), "applicants.id": new ObjectId(id) },
-          { $set: { "applicants.$.dndStats": dndStats } }
-      );
 
-      const appliedJobsStats = await applyJobsCollection.findOneAndUpdate({jobId: jobId},{$set:{status: dndStats}})
-      console.log(appliedJobsStats)
+    if (applicantIndex === -1) {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
 
-      return res.status(200).json({ message: 'Applicant status updated successfully' });
+
+    findJob.applicants[applicantIndex].dndStats = dndStats;
+
+
+    await jobPostsCollection.updateOne(
+      { _id: new ObjectId(jobId), "applicants.id": new ObjectId(id) },
+      { $set: { "applicants.$.dndStats": dndStats } }
+    );
+
+    const appliedJobsStats = await applyJobsCollection.findOneAndUpdate({ jobId: jobId }, { $set: { status: dndStats } })
+    console.log(appliedJobsStats)
+
+    return res.status(200).json({ message: 'Applicant status updated successfully' });
   } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Internal server error' });
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
