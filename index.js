@@ -48,6 +48,7 @@ const bookmarksCollection = client.db("lumijob").collection("bookmarks");
 const applyJobsCollection = client.db("lumijob").collection("appliedJobs");
 const subscriptionCollection = client.db("lumijob").collection("subscriptions");
 const temporaryCollection = client.db("lumijob").collection("temporary");
+const companyCommentsCollection = client.db("lumijob").collection("companyComments");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -188,6 +189,18 @@ app.post("/postJob", async (req, res) => {
   const jobPost = req.body;
   try {
     const postJob = await jobPostsCollection.insertOne(jobPost);
+    res.send(postJob);
+
+  }
+  catch (error) {
+    res.send(error)
+  }
+});
+// company comments for candice
+app.post("/sendFeedback", async (req, res) => {
+  const sendFeedback = req.body;
+  try {
+    const postJob = await companyCommentsCollection.insertOne(sendFeedback);
     res.send(postJob);
 
   }
@@ -408,6 +421,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       }
 
       const id = userDetails?._id
+      const email = userDetails?.email
       const name = userDetails?.name
       const profile = userDetails?.photo
       const city = userDetails?.city
@@ -419,7 +433,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       const appliedTime = new Date()
       const dndStats = 'applicant'
 
-      findJob.applicants.push({ id, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
+      findJob.applicants.push({ id,email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
 
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
 
