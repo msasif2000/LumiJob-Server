@@ -4,7 +4,7 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 
 
 app.use(
@@ -317,6 +317,20 @@ app.get("/company-profile/:id", async (req, res) => {
   const query = { _id: new ObjectId(id) };
   try {
     const result = await companyCollection.findOne(query);
+    res.send(result);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
+// job post apply session
+app.get("/jobInfo/:id", async (req, res) => {
+  const id = req.params.id;
+  // console.log("Received params:", req.params);
+  const query = { _id: new ObjectId(id) };
+  try {
+    const result = await jobPostsCollection.findOne(query);
     res.send(result);
   }
   catch (error) {
