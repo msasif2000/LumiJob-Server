@@ -117,6 +117,7 @@ app.get("/check-role/:email", async (req, res) => {
 });
 
 // Check what role is the user
+// Check what role is the user
 app.get("/check-which-role/:email", async (req, res) => {
   const email = req.params.email;
   try {
@@ -124,8 +125,9 @@ app.get("/check-which-role/:email", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const userRole = user.role || false;
-    res.status(200).json({ role: userRole });
+    // const userRole = user.role || false;
+    // res.status(200).json({ role: userRole });
+    res.status(200).json(user);
   } catch (error) {
     console.error("Error checking user role:", error);
     res.status(500).json({ message: "Internal server error" });
