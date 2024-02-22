@@ -435,7 +435,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       const appliedTime = new Date()
       const dndStats = 'applicant'
 
-      findJob.applicants.push({ id,email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
+      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
 
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
 
@@ -1003,7 +1003,7 @@ app.listen(port, () => {
 });
 
 
-// Apis for dnd
+// Apis for dnd data fetching
 app.get('/dnd-applicants/:id', async (req, res) => {
   const id = req.params.id;
 
@@ -1079,6 +1079,7 @@ app.get('/dnd-selected/:id', async (req, res) => {
 });
 
 
+// for changing status of dnd cards
 app.put('/updateApplicantsStatus/:id', async (req, res) => {
   const { id } = req.params;
   const { dndStats, jobId } = req.body;
@@ -1115,5 +1116,72 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
+// Schedule interview
+app.post('/schedule-interview', async (req, res) => {
+  const data = req.body;
+  const jobId = data.jobId;
+
+  // for finding specific applied job of the user
+  const applyJobQuery = { _id: jobId }
+  const userQuery = { candidate: data.email }
+
+  // for updating schedule interview data
+  const interviewDate = data.date
+  const interviewTime = data.time
+  const googleMeet = data.googleMeetLink
+
+  const scheduleInterview = {
+    interviewDate, interviewTime, googleMeet
+  }
+
+  try {
+    const job = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) });
+
+    if (!job) {
+      console.log('Job not found');
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const applicantIndex = job.applicants.findIndex(applicant => applicant.email === data.email);
+
+    if (applicantIndex === -1) {
+      console.log('Applicant not found');
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+
+    console.log('Applicant found:', job.applicants[applicantIndex]);
+
+    job.applicants[applicantIndex].scheduleInterview = {
+      interviewDate: data.date,
+      interviewTime: data.time,
+      googleMeet: data.googleMeetLink
+    };
+
+    console.log('Updated applicant:', job.applicants[applicantIndex]);
+
+    await jobPostsCollection.updateOne(
+      { _id: new ObjectId(jobId) },
+      { $set: job }
+    );
+
+    const appliedJob = await applyJobsCollection.findOneAndUpdate(
+      { ...applyJobQuery, ...userQuery },
+      { $set: { "scheduleInterview": scheduleInterview } },
+      { new: true }
+    );
+
+    console.log(appliedJob)
+
+    console.log('Interview scheduled successfully');
+    res.status(200).json({ message: 'Interview scheduled successfully', appliedJob });
+  }
+  catch (error) {
+    console.error('Error scheduling interview:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
