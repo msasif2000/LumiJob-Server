@@ -386,15 +386,15 @@ app.post('/post-jobs', async (req, res) => {
 
 app.post('/apply-to-jobs', async (req, res) => {
   const job = req.body;
-  const email = req.body.candidate;
+  const emails = req.body.candidate;
   const jobId = req.body.jobId;
 
   try {
-    const user = await userCollection.findOne({ email: email });
+    const user = await userCollection.findOne({ email: emails });
     const canUserApply = user ? user.canApply : 0;
 
-    const applied = await applyJobsCollection.countDocuments({ candidate: email });
-    const alreadyExist = await applyJobsCollection.findOne({ candidate: email, jobId: jobId });
+    const applied = await applyJobsCollection.countDocuments({ candidate: emails });
+    const alreadyExist = await applyJobsCollection.findOne({ candidate: emails, jobId: jobId });
 
     if (!user) {
       return res.status(404).send({ message: "User not found" });
@@ -410,13 +410,13 @@ app.post('/apply-to-jobs', async (req, res) => {
       if (!findJob.applicants) {
         findJob.applicants = [];
       }
-      const alreadyApplied = findJob.applicants.some(applicant => applicant.email === email);
+      const alreadyApplied = findJob.applicants.some(applicant => applicant.email === emails);
       if (alreadyApplied) {
         return res.status(200).send({ message: "You have already applied for this job" });
       }
       console.log(alreadyApplied)
 
-      const userDetails = await candidateCollection.findOne({ email: email })
+      const userDetails = await candidateCollection.findOne({ email: emails })
 
       if (!userDetails) {
         return res.send({ message: 'Please fill profile information' })
@@ -1183,5 +1183,25 @@ app.post('/schedule-interview', async (req, res) => {
   catch (error) {
     console.error('Error scheduling interview:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/delete-jobs-from-candidate', async (req, res) => {
+  const data = req.body;
+  const jobId = data.jobId;
+  const user = data.userEmail;
+
+  try {
+
+    await applyJobsCollection.deleteOne({ jobId: jobId, candidate: user });
+
+    await jobPostsCollection.updateOne(
+      { _id: new ObjectId(jobId) },
+      { $pull: { applicants: { email: user } } }
+    );
+
+    res.send({ message: "true" });
+  } catch (error) {
+    res.status(500).send(error.message);
   }
 });
