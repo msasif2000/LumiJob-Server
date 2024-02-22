@@ -472,6 +472,21 @@ app.get('/get-applied-jobs/:email', async (req, res) => {
   }
 })
 
+// get applied job data access from particular company 
+
+app.get('/get-applied-jobs-com/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  try {
+    const result = await applyJobsCollection.find(query).toArray()
+    res.send(result)
+  }
+  catch (error) {
+    res.status(404).send({ message: 'No applied jobs' })
+  }
+})
+
+
 app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
   const email = req.params.email;
   const query = { email: email }
