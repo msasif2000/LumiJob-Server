@@ -357,8 +357,8 @@ app.get("/jobInfo/:id", async (req, res) => {
 // company feedback get
 app.get("/companyFeedback/:id", async (req, res) => {
   const id = req.params.id;
-  console.log("Received params:", req.params.id);
-  const query = { _id: jobId };
+  //console.log("Received params:", req.params.id);
+  const query = { jobId: id };
   try {
     const result = await companyCommentsCollection.findOne(query);
     res.send(result);
