@@ -1263,3 +1263,8 @@ app.post("/add-job-sector", async (req, res) => {
     catch (error) {
       res.send
     }});
+
+    app.get("/get-skills", async(req, res) => {
+      const skills = await skillSetsCollection.find({}).toArray();
+      res.send(skills);
+    });
