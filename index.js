@@ -1235,3 +1235,15 @@ app.post('/delete-jobs-from-candidate', async (req, res) => {
     res.status(500).send(error.message);
   }
 });
+
+//job sector post
+app.post("/add-job-sector", async (req, res) => {
+  const jobSector = req.body;
+  try {
+    const postJobSector = await jobSectorCollection.insertOne(jobSector);
+    res.send(postJobSector);
+  }
+  catch (error) {
+    res.send
+  }});
+
