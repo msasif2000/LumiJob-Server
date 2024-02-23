@@ -49,6 +49,8 @@ const applyJobsCollection = client.db("lumijob").collection("appliedJobs");
 const subscriptionCollection = client.db("lumijob").collection("subscriptions");
 const temporaryCollection = client.db("lumijob").collection("temporary");
 const companyCommentsCollection = client.db("lumijob").collection("companyComments");
+const jobSectorCollection = client.db("lumijob").collection("jobSector");
+const skillSetsCollection = client.db("lumijob").collection("skillSets");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -1251,3 +1253,13 @@ app.post("/add-job-sector", async (req, res) => {
     const sectors = await jobSectorCollection.find({}).toArray();
     res.send(sectors);
   });
+
+  app.post("/add-skill", async (req, res) => {
+    const skill = req.body;
+    try {
+      const postSkill = await skillSetsCollection.insertOne(skill);
+      res.send(postSkill);
+    }
+    catch (error) {
+      res.send
+    }});
