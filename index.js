@@ -1247,3 +1247,7 @@ app.post("/add-job-sector", async (req, res) => {
     res.send
   }});
 
+  app.get("/get-sectors", async(req, res) => {
+    const sectors = await jobSectorCollection.find({}).toArray();
+    res.send(sectors);
+  });
