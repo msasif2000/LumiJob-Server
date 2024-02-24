@@ -1220,23 +1220,29 @@ app.post('/schedule-interview', async (req, res) => {
 
 app.post('/delete-jobs-from-candidate', async (req, res) => {
   const data = req.body;
+  const id = data.id
   const jobId = data.jobId;
   const user = data.userEmail;
 
   try {
 
-    await applyJobsCollection.deleteOne({ jobId: jobId, candidate: user });
+    await applyJobsCollection.deleteOne({ _id: new ObjectId(id), candidate: user });
+
+  
 
     await jobPostsCollection.updateOne(
-      { _id: new ObjectId(jobId) },
-      { $pull: { applicants: { email: user } } }
-    );
+        { _id: new ObjectId(jobId) },
+        { $pull: { applicants: { email: user } } }
+      );
+
+
 
     res.send({ message: "true" });
   } catch (error) {
     res.status(500).send(error.message);
   }
 });
+
 
 //job sector post
 app.post("/add-job-sector", async (req, res) => {
