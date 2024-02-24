@@ -404,7 +404,7 @@ app.post('/post-jobs', async (req, res) => {
 app.post('/apply-to-jobs', async (req, res) => {
   const job = req.body;
   const emails = req.body.candidate;
-  const jobId = req.body.jobId;
+  const jobId = job.jobId;
 
   try {
     const user = await userCollection.findOne({ email: emails });
@@ -420,9 +420,9 @@ app.post('/apply-to-jobs', async (req, res) => {
     } else if (alreadyExist) {
       return res.status(200).send({ message: "Already applied" });
     } else {
-      // update applicants list 
+
       const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) })
-      console.log('job is found', findJob)
+      // console.log('job is found', findJob)
 
       if (!findJob.applicants) {
         findJob.applicants = [];
@@ -1247,24 +1247,26 @@ app.post("/add-job-sector", async (req, res) => {
   }
   catch (error) {
     res.send
-  }});
+  }
+});
 
-  app.get("/get-sectors", async(req, res) => {
-    const sectors = await jobSectorCollection.find({}).toArray();
-    res.send(sectors);
-  });
+app.get("/get-sectors", async (req, res) => {
+  const sectors = await jobSectorCollection.find({}).toArray();
+  res.send(sectors);
+});
 
-  app.post("/add-skill", async (req, res) => {
-    const skill = req.body;
-    try {
-      const postSkill = await skillSetsCollection.insertOne(skill);
-      res.send(postSkill);
-    }
-    catch (error) {
-      res.send
-    }});
+app.post("/add-skill", async (req, res) => {
+  const skill = req.body;
+  try {
+    const postSkill = await skillSetsCollection.insertOne(skill);
+    res.send(postSkill);
+  }
+  catch (error) {
+    res.send
+  }
+});
 
-    app.get("/get-skills", async(req, res) => {
-      const skills = await skillSetsCollection.find({}).toArray();
-      res.send(skills);
-    });
+app.get("/get-skills", async (req, res) => {
+  const skills = await skillSetsCollection.find({}).toArray();
+  res.send(skills);
+});
