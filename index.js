@@ -1110,21 +1110,12 @@ app.get('/dnd-selected/:id', async (req, res) => {
   }
 });
 
-app.get('/employees', async (req, res) => {
-  try {
-    const jobs = await jobPostsCollection.find({ email: "x@gmail.com", "applicants": { $elemMatch: { "dndStats": "selected" } } }).toArray();
-    res.send(jobs)
-
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).send('Internal Server Error');
-  }
-})
 
 app.get('/selectedApplicants', async (req, res) => {
+  const { companiEmail } = req.query;
   try {
     const pipeline = [
-      { $match: { email: "x@gmail.com", "applicants.dndStats": "selected" } },
+      { $match: { email: companiEmail, "applicants.dndStats": "selected" } },
       { $unwind: "$applicants" },
       { $match: { "applicants.dndStats": "selected" } },
       {
