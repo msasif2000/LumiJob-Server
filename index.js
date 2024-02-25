@@ -1111,6 +1111,40 @@ app.get('/dnd-selected/:id', async (req, res) => {
 });
 
 
+app.get('/selectedApplicants', async (req, res) => {
+  const { companiEmail } = req.query;
+  try {
+    const pipeline = [
+      { $match: { email: companiEmail, "applicants.dndStats": "selected" } },
+      { $unwind: "$applicants" },
+      { $match: { "applicants.dndStats": "selected" } },
+      {
+        $group: {
+          _id: "$applicants.id",
+          email: { $first: "$applicants.email" },
+          name: { $first: "$applicants.name" },
+          profile: { $first: "$applicants.profile" },
+          city: { $first: "$applicants.city" },
+          country: { $first: "$applicants.country" },
+          position: { $first: "$applicants.position" },
+          premium: { $first: "$applicants.premium" },
+          minSalary: { $first: "$applicants.minSalary" },
+          maxSalary: { $first: "$applicants.maxSalary" },
+          appliedTime: { $first: "$applicants.appliedTime" },
+          dndStats: { $first: "$applicants.dndStats" }
+        }
+      }
+    ];
+
+    const selectedApplicants = await jobPostsCollection.aggregate(pipeline).toArray();
+    res.send(selectedApplicants);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
 // for changing status of dnd cards
 app.put('/updateApplicantsStatus/:id', async (req, res) => {
   const { id } = req.params;
@@ -1228,12 +1262,12 @@ app.post('/delete-jobs-from-candidate', async (req, res) => {
 
     await applyJobsCollection.deleteOne({ _id: new ObjectId(id), candidate: user });
 
-  
+
 
     await jobPostsCollection.updateOne(
-        { _id: new ObjectId(jobId) },
-        { $pull: { applicants: { email: user } } }
-      );
+      { _id: new ObjectId(jobId) },
+      { $pull: { applicants: { email: user } } }
+    );
 
 
 
