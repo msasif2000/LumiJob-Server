@@ -48,6 +48,9 @@ const bookmarksCollection = client.db("lumijob").collection("bookmarks");
 const applyJobsCollection = client.db("lumijob").collection("appliedJobs");
 const subscriptionCollection = client.db("lumijob").collection("subscriptions");
 const temporaryCollection = client.db("lumijob").collection("temporary");
+const companyCommentsCollection = client.db("lumijob").collection("companyComments");
+const jobSectorCollection = client.db("lumijob").collection("jobSector");
+const skillSetsCollection = client.db("lumijob").collection("skillSets");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -117,6 +120,7 @@ app.get("/check-role/:email", async (req, res) => {
 });
 
 // Check what role is the user
+// Check what role is the user
 app.get("/check-which-role/:email", async (req, res) => {
   const email = req.params.email;
   try {
@@ -124,8 +128,9 @@ app.get("/check-which-role/:email", async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const userRole = user.role || false;
-    res.status(200).json({ role: userRole });
+    // const userRole = user.role || false;
+    // res.status(200).json({ role: userRole });
+    res.status(200).json(user);
   } catch (error) {
     console.error("Error checking user role:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -188,6 +193,18 @@ app.post("/postJob", async (req, res) => {
   const jobPost = req.body;
   try {
     const postJob = await jobPostsCollection.insertOne(jobPost);
+    res.send(postJob);
+
+  }
+  catch (error) {
+    res.send(error)
+  }
+});
+// company comments for candice
+app.post("/sendFeedback", async (req, res) => {
+  const sendFeedback = req.body;
+  try {
+    const postJob = await companyCommentsCollection.insertOne(sendFeedback);
     res.send(postJob);
 
   }
@@ -324,6 +341,35 @@ app.get("/company-profile/:id", async (req, res) => {
     res.status(500).send(error);
   }
 });
+// job post apply session
+app.get("/jobInfo/:id", async (req, res) => {
+  const id = req.params.id;
+  console.log("Received params:", req.params.id);
+  const query = { _id: new ObjectId(id) };
+  try {
+    const result = await jobPostsCollection.findOne(query);
+    res.send(result);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
+
+// company feedback get
+app.get("/companyFeedback/:id", async (req, res) => {
+  const id = req.params.id;
+  //console.log("Received params:", req.params.id);
+  const query = { jobId: id };
+  try {
+    const result = await companyCommentsCollection.findOne(query);
+    res.send(result);
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
 
 // post jobs api because upper api not working
@@ -357,15 +403,15 @@ app.post('/post-jobs', async (req, res) => {
 
 app.post('/apply-to-jobs', async (req, res) => {
   const job = req.body;
-  const email = req.body.candidate;
-  const jobId = req.body.jobId;
+  const emails = req.body.candidate;
+  const jobId = job.jobId;
 
   try {
-    const user = await userCollection.findOne({ email: email });
+    const user = await userCollection.findOne({ email: emails });
     const canUserApply = user ? user.canApply : 0;
 
-    const applied = await applyJobsCollection.countDocuments({ candidate: email });
-    const alreadyExist = await applyJobsCollection.findOne({ candidate: email, jobId: jobId });
+    const applied = await applyJobsCollection.countDocuments({ candidate: emails });
+    const alreadyExist = await applyJobsCollection.findOne({ candidate: emails, jobId: jobId });
 
     if (!user) {
       return res.status(404).send({ message: "User not found" });
@@ -374,24 +420,40 @@ app.post('/apply-to-jobs', async (req, res) => {
     } else if (alreadyExist) {
       return res.status(200).send({ message: "Already applied" });
     } else {
-      // update applicants list 
+
       const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) })
-      console.log('job is found', findJob)
+      // console.log('job is found', findJob)
 
       if (!findJob.applicants) {
         findJob.applicants = [];
       }
-      const alreadyApplied = findJob.applicants.some(applicant => applicant.email === email);
+      const alreadyApplied = findJob.applicants.some(applicant => applicant.email === emails);
       if (alreadyApplied) {
         return res.status(200).send({ message: "You have already applied for this job" });
       }
       console.log(alreadyApplied)
 
-      const userDetails = await userCollection.findOne({ email: email })
-      const profile = userDetails?.photo
-      const name = userDetails?.name
+      const userDetails = await candidateCollection.findOne({ email: emails })
 
-      findJob.applicants.push({ email, name, profile, appliedTime: new Date() });
+      if (!userDetails) {
+        return res.send({ message: 'Please fill profile information' })
+      }
+
+      const id = userDetails?._id
+      const email = userDetails?.email
+      const name = userDetails?.name
+      const profile = userDetails?.photo
+      const city = userDetails?.city
+      const country = userDetails?.country
+      const position = userDetails?.position
+      const premium = userDetails?.status
+      const minSalary = userDetails?.salaryRangeMin
+      const maxSalary = userDetails?.salaryRangeMax
+      const appliedTime = new Date()
+      const dndStats = 'applicant'
+
+      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
+
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
 
       if (result.modifiedCount > 0) {
@@ -427,6 +489,21 @@ app.get('/get-applied-jobs/:email', async (req, res) => {
   }
 })
 
+// get applied job data access from particular company 
+
+app.get('/get-applied-jobs-com/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  try {
+    const result = await applyJobsCollection.find(query).toArray()
+    res.send(result)
+  }
+  catch (error) {
+    res.status(404).send({ message: 'No applied jobs' })
+  }
+})
+
+
 app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
   const email = req.params.email;
   const query = { email: email }
@@ -439,16 +516,15 @@ app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
   }
 })
 // company profile posted jobs
-app.get(`/company-postedJobs/:email`, async(req, res) => {
+app.get(`/company-postedJobs/:email`, async (req, res) => {
   const email = req.params.email;
-  const query = {email : email};
-  try{
+  const query = { email: email };
+  try {
     const result = await jobPostsCollection.find(query).toArray();
-    res.send(result); 
+    res.send(result);
   }
-  catch(error) 
-  {
-    res.status(404).send({message : error})
+  catch (error) {
+    res.status(404).send({ message: error })
   }
 
 })
@@ -511,7 +587,7 @@ app.delete('/delete-seminar/:id', async (req, res) => {
 })
 
 //post blog data
-app.post("/post-the-blog", async(req, res ) => {
+app.post("/post-the-blog", async (req, res) => {
   const blog = req.body;
   try {
     const postBlog = await blogsCollection.insertOne(blog);
@@ -523,7 +599,7 @@ app.post("/post-the-blog", async(req, res ) => {
 })
 
 //update blog data
-app.patch('/update-blog/:id', async(req, res) => {
+app.patch('/update-blog/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const update = req.body;
@@ -707,8 +783,8 @@ app.get("/candidate-Search", async (req, res) => {
   const query = {
     $or: [
       { name: { $regex: searchRegex } },
-      { position: { $regex: searchRegex } }, 
-      { skills: { $elemMatch: { $regex: searchRegex } } } 
+      { position: { $regex: searchRegex } },
+      { skills: { $elemMatch: { $regex: searchRegex } } }
     ]
   };
 
@@ -929,6 +1005,18 @@ app.get('/get-subs-details/:email', async (req, res) => {
   }
 })
 
+// get payment info
+
+app.get('/payment', async (req, res) => {
+  try {
+    const result = await subscriptionCollection.find().toArray();
+    res.send(result);
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
 app.delete('/delete-subs-plan/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
@@ -944,4 +1032,281 @@ app.delete('/delete-subs-plan/:id', async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
+});
+
+
+// Apis for dnd data fetching
+app.get('/dnd-applicants/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const job = await jobPostsCollection.findOne({ _id: new ObjectId(id) });
+
+    if (job) {
+      const applicants = job.applicants.filter(applicant => applicant.dndStats === 'applicant');
+      res.send(applicants);
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+app.get('/dnd-pre-select/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const job = await jobPostsCollection.findOne({ _id: new ObjectId(id) });
+
+    if (job) {
+      const preSelectedApplicants = job.applicants.filter(applicant => applicant.dndStats === 'pre-selected');
+      res.send(preSelectedApplicants);
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+app.get('/dnd-interview/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const job = await jobPostsCollection.findOne({ _id: new ObjectId(id) });
+
+    if (job) {
+      const interviewApplicants = job.applicants.filter(applicant => applicant.dndStats === 'interview');
+      res.send(interviewApplicants);
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+app.get('/dnd-selected/:id', async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const job = await jobPostsCollection.findOne({ _id: new ObjectId(id) });
+
+    if (job) {
+      const selectedApplicants = job.applicants.filter(applicant => applicant.dndStats === 'selected');
+      res.send(selectedApplicants);
+    } else {
+      res.status(404).send('Job not found');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+app.get('/selectedApplicants', async (req, res) => {
+  const { companiEmail } = req.query;
+  try {
+    const pipeline = [
+      { $match: { email: companiEmail, "applicants.dndStats": "selected" } },
+      { $unwind: "$applicants" },
+      { $match: { "applicants.dndStats": "selected" } },
+      {
+        $group: {
+          _id: "$applicants.id",
+          email: { $first: "$applicants.email" },
+          name: { $first: "$applicants.name" },
+          profile: { $first: "$applicants.profile" },
+          city: { $first: "$applicants.city" },
+          country: { $first: "$applicants.country" },
+          position: { $first: "$applicants.position" },
+          premium: { $first: "$applicants.premium" },
+          minSalary: { $first: "$applicants.minSalary" },
+          maxSalary: { $first: "$applicants.maxSalary" },
+          appliedTime: { $first: "$applicants.appliedTime" },
+          dndStats: { $first: "$applicants.dndStats" }
+        }
+      }
+    ];
+
+    const selectedApplicants = await jobPostsCollection.aggregate(pipeline).toArray();
+    res.send(selectedApplicants);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+// for changing status of dnd cards
+app.put('/updateApplicantsStatus/:id', async (req, res) => {
+  const { id } = req.params;
+  const { dndStats, jobId } = req.body;
+  console.log(id, jobId, dndStats);
+
+  try {
+    const findJob = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) });
+
+    if (!findJob) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+
+    const applicantIndex = findJob.applicants.findIndex(applicant => applicant.id.toString() === id);
+
+
+    if (applicantIndex === -1) {
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+
+
+    findJob.applicants[applicantIndex].dndStats = dndStats;
+
+
+    await jobPostsCollection.updateOne(
+      { _id: new ObjectId(jobId), "applicants.id": new ObjectId(id) },
+      { $set: { "applicants.$.dndStats": dndStats } }
+    );
+
+    const appliedJobsStats = await applyJobsCollection.findOneAndUpdate({ jobId: jobId }, { $set: { status: dndStats } })
+    console.log(appliedJobsStats)
+
+    return res.status(200).json({ message: 'Applicant status updated successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
+// Schedule interview
+app.post('/schedule-interview', async (req, res) => {
+  const data = req.body;
+  const jobId = data.jobId;
+
+  // for finding specific applied job of the user
+  const applyJobQuery = { _id: jobId }
+  const userQuery = { candidate: data.email }
+
+  // for updating schedule interview data
+  const interviewDate = data.date
+  const interviewTime = data.time
+  const googleMeet = data.googleMeetLink
+
+  const scheduleInterview = {
+    interviewDate, interviewTime, googleMeet
+  }
+
+  try {
+    const job = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) });
+
+    if (!job) {
+      console.log('Job not found');
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const applicantIndex = job.applicants.findIndex(applicant => applicant.email === data.email);
+
+    if (applicantIndex === -1) {
+      console.log('Applicant not found');
+      return res.status(404).json({ error: 'Applicant not found' });
+    }
+
+    console.log('Applicant found:', job.applicants[applicantIndex]);
+
+    job.applicants[applicantIndex].scheduleInterview = {
+      interviewDate: data.date,
+      interviewTime: data.time,
+      googleMeet: data.googleMeetLink
+    };
+
+    console.log('Updated applicant:', job.applicants[applicantIndex]);
+
+    await jobPostsCollection.updateOne(
+      { _id: new ObjectId(jobId) },
+      { $set: job }
+    );
+
+    const appliedJob = await applyJobsCollection.findOneAndUpdate(
+      { ...applyJobQuery, ...userQuery },
+      { $set: { "scheduleInterview": scheduleInterview } },
+      { new: true }
+    );
+
+    console.log(appliedJob)
+
+    console.log('Interview scheduled successfully');
+    res.status(200).json({ message: 'Interview scheduled successfully', appliedJob });
+  }
+  catch (error) {
+    console.error('Error scheduling interview:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/delete-jobs-from-candidate', async (req, res) => {
+  const data = req.body;
+  const id = data.id
+  const jobId = data.jobId;
+  const user = data.userEmail;
+
+  try {
+
+    await applyJobsCollection.deleteOne({ _id: new ObjectId(id), candidate: user });
+
+
+
+    await jobPostsCollection.updateOne(
+      { _id: new ObjectId(jobId) },
+      { $pull: { applicants: { email: user } } }
+    );
+
+
+
+    res.send({ message: "true" });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+
+//job sector post
+app.post("/add-job-sector", async (req, res) => {
+  const jobSector = req.body;
+  try {
+    const postJobSector = await jobSectorCollection.insertOne(jobSector);
+    res.send(postJobSector);
+  }
+  catch (error) {
+    res.send
+  }
+});
+
+app.get("/get-sectors", async (req, res) => {
+  const sectors = await jobSectorCollection.find({}).toArray();
+  res.send(sectors);
+});
+
+app.post("/add-skill", async (req, res) => {
+  const skill = req.body;
+  try {
+    const postSkill = await skillSetsCollection.insertOne(skill);
+    res.send(postSkill);
+  }
+  catch (error) {
+    res.send
+  }
+});
+
+app.get("/get-skills", async (req, res) => {
+  const skills = await skillSetsCollection.find({}).toArray();
+  res.send(skills);
 });
