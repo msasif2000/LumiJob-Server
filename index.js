@@ -229,6 +229,21 @@ app.delete('/postJob/:id', async (req, res) => {
 })
 
 
+
+
+// get specific user data from candidates collection
+app.get('/specific-candidate/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const result = await candidateCollection.findOne({ email: email })
+    res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
+
+
 // update user information in role specific database
 app.put("/user-update/:email", async (req, res) => {
   const email = req.params.email;
@@ -269,19 +284,6 @@ app.put("/user-update/:email", async (req, res) => {
     res.status(500).send(error);
   }
 });
-
-
-// get specific user data from candidates collection
-app.get('/specific-candidate/:email', async (req, res) => {
-  const email = req.params.email;
-  try {
-    const result = await candidateCollection.findOne({ email: email })
-    res.status(200).send(result)
-  }
-  catch (error) {
-    res.send({ message: 'Failed' })
-  }
-})
 
 
 // Get matchingJobs data by candidate email
