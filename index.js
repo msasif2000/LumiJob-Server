@@ -228,7 +228,6 @@ app.delete('/postJob/:id', async (req, res) => {
   res.send(result);
 })
 
-
 // update user information in role specific database
 app.put("/user-update/:email", async (req, res) => {
   const email = req.params.email;
@@ -241,7 +240,7 @@ app.put("/user-update/:email", async (req, res) => {
     const userExist = await userCollection.findOne(filter);
     let result;
     if (!userExist) {
-      return res.status(404).send({ message: "User not found" });
+      return res.status(404).send({ message: "User not found ." });
     }
     else if (userData.role === 'candidate') {
       result = await candidateCollection.findOneAndUpdate(
@@ -256,7 +255,7 @@ app.put("/user-update/:email", async (req, res) => {
         options
       );
     } else {
-      return res.status(400).send({ message: "Invalid role specified" });
+      return res.status(400).send({ message: "Invalid role specified ." });
     }
 
     const photo = userData.photo;
@@ -271,6 +270,7 @@ app.put("/user-update/:email", async (req, res) => {
 });
 
 
+
 // get specific user data from candidates collection
 app.get('/specific-candidate/:email', async (req, res) => {
   const email = req.params.email;
@@ -282,6 +282,8 @@ app.get('/specific-candidate/:email', async (req, res) => {
     res.send({ message: 'Failed' })
   }
 })
+
+
 
 
 // Get matchingJobs data by candidate email
