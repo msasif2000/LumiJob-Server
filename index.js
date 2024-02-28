@@ -228,6 +228,46 @@ app.delete('/postJob/:id', async (req, res) => {
   res.send(result);
 })
 
+// update user information in role specific database
+app.put("/user-update/:email", async (req, res) => {
+  const email = req.params.email;
+  const userData = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+  console.log(userData)
+
+  try {
+    const userExist = await userCollection.findOne(filter);
+    let result;
+    if (!userExist) {
+      return res.status(404).send({ message: "User not found ." });
+    }
+    else if (userData.role === 'candidate') {
+      result = await candidateCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else if (userData.role === 'company') {
+      result = await companyCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else {
+      return res.status(400).send({ message: "Invalid role specified ." });
+    }
+
+    const photo = userData.photo;
+    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
+
+    res.send({ message: "true" });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
 
 
@@ -244,46 +284,6 @@ app.get('/specific-candidate/:email', async (req, res) => {
 })
 
 
-// update user information in role specific database
-app.put("/user-update/:email", async (req, res) => {
-  const email = req.params.email;
-  const userData = req.body;
-  const filter = { email: email };
-  const options = { upsert: true };
-  console.log(userData)
-
-  try {
-    const userExist = await userCollection.findOne(filter);
-    let result;
-    if (!userExist) {
-      return res.status(404).send({ message: "User not found" });
-    }
-    else if (userData.role === 'candidate') {
-      result = await candidateCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else if (userData.role === 'company') {
-      result = await companyCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else {
-      return res.status(400).send({ message: "Invalid role specified" });
-    }
-
-    const photo = userData.photo;
-    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
-
-    res.send({ message: "true" });
-    console.log(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send(error);
-  }
-});
 
 
 // Get matchingJobs data by candidate email
