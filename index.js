@@ -1041,6 +1041,18 @@ app.get('/subscriptions/:planId', async (req, res) => {
 
 
 
+app.get('/payment/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const result = await subscriptionCollection.findOne({ email: email })
+    res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
+
+
 // get payment info
 
 app.get('/payment', async (req, res) => {
