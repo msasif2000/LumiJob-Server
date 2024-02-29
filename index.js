@@ -229,46 +229,6 @@ app.delete('/postJob/:id', async (req, res) => {
   res.send(result);
 })
 
-// update user information in role specific database
-app.put("/user-update/:email", async (req, res) => {
-  const email = req.params.email;
-  const userData = req.body;
-  const filter = { email: email };
-  const options = { upsert: true };
-  console.log(userData)
-
-  try {
-    const userExist = await userCollection.findOne(filter);
-    let result;
-    if (!userExist) {
-      return res.status(404).send({ message: "User not found ." });
-    }
-    else if (userData.role === 'candidate') {
-      result = await candidateCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else if (userData.role === 'company') {
-      result = await companyCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else {
-      return res.status(400).send({ message: "Invalid role specified ." });
-    }
-
-    const photo = userData.photo;
-    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
-
-    res.send({ message: "true" });
-    console.log(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send(error);
-  }
-});
 
 
 
@@ -285,6 +245,46 @@ app.get('/specific-candidate/:email', async (req, res) => {
 })
 
 
+// update user information in role specific database
+app.put("/user-update/:email", async (req, res) => {
+  const email = req.params.email;
+  const userData = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+  console.log(userData)
+
+  try {
+    const userExist = await userCollection.findOne(filter);
+    let result;
+    if (!userExist) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    else if (userData.role === 'candidate') {
+      result = await candidateCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else if (userData.role === 'company') {
+      result = await companyCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else {
+      return res.status(400).send({ message: "Invalid role specified" });
+    }
+
+    const photo = userData.photo;
+    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
+
+    res.send({ message: "true" });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
 
 // Get matchingJobs data by candidate email
@@ -347,7 +347,7 @@ app.get("/company-profile/:id", async (req, res) => {
 // job post apply session
 app.get("/jobInfo/:id", async (req, res) => {
   const id = req.params.id;
-  // console.log("Received params:", req.params.id);
+  console.log("Received params:", req.params.id);
   const query = { _id: new ObjectId(id) };
   try {
     const result = await jobPostsCollection.findOne(query);
@@ -867,22 +867,6 @@ app.get('/company-data', async (req, res) => {
   res.send(result);
 })
 
-app.get('/company', async (req, res) => {
-  const email = req.query.email;
-  const query = { email: email }
-  try {
-    const result = await companyCollection.findOne(query)
-    res.send(result)
-    console.log("email", email)
-  }
-  catch (error) {
-    res.send(error)
-    console.log(error);
-  }
-})
-
-
-
 app.delete('/delete-company/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
@@ -1253,9 +1237,7 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
 
 
 
-
 // Schedule interview
-
 app.post('/schedule-interview', async (req, res) => {
   const data = req.body;
   const jobId = data.jobId;
@@ -1378,23 +1360,3 @@ app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
 });
-
-
-app.post('/set-resume', async (req, res) => {
-  const data = req.body;
-  const user = data.user;
-  const resume = data.resume;
-
-  try {
-    const result = await candidateCollection.findOneAndUpdate(
-      { email: user },
-      { $set: { resume: resume } },
-      { upsert: true }
-    );
-    res.send({message:'true'});
-    // console.log(result)
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-
