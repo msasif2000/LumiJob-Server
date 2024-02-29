@@ -51,6 +51,7 @@ const temporaryCollection = client.db("lumijob").collection("temporary");
 const companyCommentsCollection = client.db("lumijob").collection("companyComments");
 const jobSectorCollection = client.db("lumijob").collection("jobSector");
 const skillSetsCollection = client.db("lumijob").collection("skillSets");
+const packageCollection = client.db("lumijob").collection("userPack");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -1006,6 +1007,33 @@ app.get('/get-subs-details/:email', async (req, res) => {
     res.send(error)
   }
 })
+
+// recreating the whole payment info logic info (start)
+
+app.get('/packages/:role', async (req, res) => {
+  const { role } = req.params;
+
+  try {
+    const packages = await packageCollection.findOne({ name: role });
+    if (!packages) {
+      return res.status(404).json({ error:'not found' });
+    }
+    res.json(packages);
+  } catch (error) {
+    console.error('Error retrieving packages:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
+
+
+
+
+// recreating the whole payment info logic info (end)
+
+
 
 // get payment info
 
