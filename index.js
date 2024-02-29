@@ -1038,7 +1038,19 @@ app.get('/packages/company', async (req, res) => {
   }
 });
 
-
+// Route to fetch package data for candidates
+app.get('/packages/candidate', async (req, res) => {
+  try {
+    const packages = await packageCollection.findOne({ role: "Candidate" });
+    if (!packages) {
+      return res.status(404).json({ error: 'Package not found for candidates' });
+    }
+    res.json(packages);
+  } catch (error) {
+    console.error('Error retrieving candidate packages:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 
