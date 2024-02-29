@@ -1025,6 +1025,20 @@ app.get('/packages/:role', async (req, res) => {
   }
 });
 
+app.get('/packages/company', async (req, res) => {
+  try {
+    const packages = await packageCollection.findOne({ role: "Company" });
+    if (!packages) {
+      return res.status(404).json({ error: 'Package not found for companies' });
+    }
+    res.json(packages);
+  } catch (error) {
+    console.error('Error retrieving company packages:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 
 
 
