@@ -436,9 +436,12 @@ app.post('/apply-to-jobs', async (req, res) => {
       console.log(alreadyApplied)
 
       const userDetails = await candidateCollection.findOne({ email: emails })
+      const resume = userDetails?.resume
 
       if (!userDetails) {
         return res.send({ message: 'Please fill profile information' })
+      } else if (!resume) {
+        return res.send({ message: 'Please upload a resume' })
       }
 
       const id = userDetails?._id
@@ -454,7 +457,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       const appliedTime = new Date()
       const dndStats = 'applicant'
 
-      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
+      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats, resume });
 
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
 
@@ -1325,7 +1328,7 @@ app.post('/set-resume', async (req, res) => {
       { $set: { resume: resume } },
       { upsert: true }
     );
-    res.send({message:'true'});
+    res.send({ message: 'true' });
     // console.log(result)
   } catch (error) {
     res.status(500).send(error);
