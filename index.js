@@ -347,7 +347,7 @@ app.get("/company-profile/:id", async (req, res) => {
 // job post apply session
 app.get("/jobInfo/:id", async (req, res) => {
   const id = req.params.id;
-  console.log("Received params:", req.params.id);
+  // console.log("Received params:", req.params.id);
   const query = { _id: new ObjectId(id) };
   try {
     const result = await jobPostsCollection.findOne(query);
@@ -867,6 +867,22 @@ app.get('/company-data', async (req, res) => {
   res.send(result);
 })
 
+app.get('/company', async (req, res) => {
+  const email = req.query.email;
+  const query = { email: email }
+  try {
+    const result = await companyCollection.findOne(query)
+    res.send(result)
+    console.log("email", email)
+  }
+  catch (error) {
+    res.send(error)
+    console.log(error);
+  }
+})
+
+
+
 app.delete('/delete-company/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
@@ -1237,7 +1253,9 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
 
 
 
+
 // Schedule interview
+
 app.post('/schedule-interview', async (req, res) => {
   const data = req.body;
   const jobId = data.jobId;
