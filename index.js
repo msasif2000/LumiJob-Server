@@ -1027,10 +1027,16 @@ app.get('/packages/candidate', async (req, res) => {
   res.send(packages);
 });
 
+app.get('/subscriptions/:planId', async (req, res) => {
+  const { planId } = req.params;
+  const query = { _id: new ObjectId(planId) };
+  const subscription = await packageCollection.findOne(query);
+  res.send(subscription);
+});
 
 
-
-
+// ----
+// ----
 // recreating the whole payment info logic info (end)
 
 
@@ -1046,6 +1052,8 @@ app.get('/payment', async (req, res) => {
     res.send(error)
   }
 })
+
+
 
 app.delete('/delete-subs-plan/:id', async (req, res) => {
   const id = req.params.id;
