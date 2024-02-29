@@ -1010,48 +1010,22 @@ app.get('/get-subs-details/:email', async (req, res) => {
 
 // recreating the whole payment info logic info (start)
 
-app.get('/packages/:role', async (req, res) => {
-  const { role } = req.params;
-
-  try {
-    const packages = await packageCollection.findOne({ name: role });
-    if (!packages) {
-      return res.status(404).json({ error:'not found' });
-    }
-    res.json(packages);
-  } catch (error) {
-    console.error('Error retrieving packages:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 app.get('/packages/company', async (req, res) => {
-  try {
-    const packages = await packageCollection.findOne({ role: "Company" });
-    if (!packages) {
-      return res.status(404).json({ error: 'Package not found for companies' });
-    }
-    res.json(packages);
-  } catch (error) {
-    console.error('Error retrieving company packages:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  const packages = await packageCollection.find({ role: "company" }).toArray();
+  if (!packages || packages.length === 0) {
+    return res.status(404).json({ error: 'Packages not found for companies' });
   }
+  res.send(packages);
 });
 
-// Route to fetch package data for candidates
 app.get('/packages/candidate', async (req, res) => {
-  try {
-    const packages = await packageCollection.findOne({ role: "Candidate" });
-    if (!packages) {
-      return res.status(404).json({ error: 'Package not found for candidates' });
-    }
-    res.json(packages);
-  } catch (error) {
-    console.error('Error retrieving candidate packages:', error);
-    res.status(500).json({ error: 'Internal server error' });
+  const packages = await packageCollection.find({ role: "candidate" }).toArray();
+  if (!packages || packages.length === 0) {
+    return res.status(404).json({ error: 'Packages not found for candidates' });
   }
+  res.send(packages);
 });
-
 
 
 
