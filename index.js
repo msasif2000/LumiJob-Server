@@ -1378,3 +1378,23 @@ app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
 });
+
+
+app.post('/set-resume', async (req, res) => {
+  const data = req.body;
+  const user = data.user;
+  const resume = data.resume;
+
+  try {
+    const result = await candidateCollection.findOneAndUpdate(
+      { email: user },
+      { $set: { resume: resume } },
+      { upsert: true }
+    );
+    res.send({message:'true'});
+    // console.log(result)
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
