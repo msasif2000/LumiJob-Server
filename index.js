@@ -287,6 +287,19 @@ app.put("/user-update/:email", async (req, res) => {
 });
 
 
+// get specific user data from candidates collection
+app.get('/specific-candidate/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const result = await candidateCollection.findOne({ email: email })
+    res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
+
+
 // Get matchingJobs data by candidate email
 app.get('/matchingJobs', async (req, res) => {
   const email = req.query.email;
@@ -867,6 +880,21 @@ app.get('/company-data', async (req, res) => {
   res.send(result);
 })
 
+app.get('/company', async (req, res) => {
+  const email = req.query.email;
+  const query = { email: email }
+  try {
+    const result = await companyCollection.findOne(query)
+    res.send(result)
+    console.log("email", email)
+  }
+  catch (error) {
+    res.send(error)
+    console.log(error);
+  }
+})
+
+
 app.delete('/delete-company/:id', async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
@@ -1359,4 +1387,21 @@ app.post("/add-skill", async (req, res) => {
 app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
+});
+app.post('/set-resume', async (req, res) => {
+  const data = req.body;
+  const user = data.user;
+  const resume = data.resume;
+
+  try {
+    const result = await candidateCollection.findOneAndUpdate(
+      { email: user },
+      { $set: { resume: resume } },
+      { upsert: true }
+    );
+    res.send({message:'true'});
+    // console.log(result)
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
