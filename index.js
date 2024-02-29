@@ -51,6 +51,7 @@ const temporaryCollection = client.db("lumijob").collection("temporary");
 const companyCommentsCollection = client.db("lumijob").collection("companyComments");
 const jobSectorCollection = client.db("lumijob").collection("jobSector");
 const skillSetsCollection = client.db("lumijob").collection("skillSets");
+const packageCollection = client.db("lumijob").collection("userPack");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -1007,6 +1008,51 @@ app.get('/get-subs-details/:email', async (req, res) => {
   }
 })
 
+// recreating the whole payment info logic info (start)
+
+
+app.get('/packages/company', async (req, res) => {
+  const packages = await packageCollection.find({ role: "company" }).toArray();
+  if (!packages || packages.length === 0) {
+    return res.status(404).json({ error: 'Packages not found for companies' });
+  }
+  res.send(packages);
+});
+
+app.get('/packages/candidate', async (req, res) => {
+  const packages = await packageCollection.find({ role: "candidate" }).toArray();
+  if (!packages || packages.length === 0) {
+    return res.status(404).json({ error: 'Packages not found for candidates' });
+  }
+  res.send(packages);
+});
+
+app.get('/subscriptions/:planId', async (req, res) => {
+  const { planId } = req.params;
+  const query = { _id: new ObjectId(planId) };
+  const subscription = await packageCollection.findOne(query);
+  res.send(subscription);
+});
+
+
+// ----
+// ----
+// recreating the whole payment info logic info (end)
+
+
+
+app.get('/payment/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const result = await subscriptionCollection.findOne({ email: email })
+    res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
+
+
 // get payment info
 
 app.get('/payment', async (req, res) => {
@@ -1018,6 +1064,8 @@ app.get('/payment', async (req, res) => {
     res.send(error)
   }
 })
+
+
 
 app.delete('/delete-subs-plan/:id', async (req, res) => {
   const id = req.params.id;
