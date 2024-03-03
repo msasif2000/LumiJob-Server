@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "https://lumijobs-84d3b.web.app"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://lumijobs-84d3b.web.app", "https://lumijobs.tech"],
   })
 );
 app.use(express.urlencoded({ extended: true }));
