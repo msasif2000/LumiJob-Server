@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "https://lumijobs-84d3b.web.app"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://lumijobs-84d3b.web.app", "https://lumijobs.tech"],
   })
 );
 app.use(express.urlencoded({ extended: true }));
@@ -229,46 +229,6 @@ app.delete('/postJob/:id', async (req, res) => {
   res.send(result);
 })
 
-// update user information in role specific database
-app.put("/user-update/:email", async (req, res) => {
-  const email = req.params.email;
-  const userData = req.body;
-  const filter = { email: email };
-  const options = { upsert: true };
-  console.log(userData)
-
-  try {
-    const userExist = await userCollection.findOne(filter);
-    let result;
-    if (!userExist) {
-      return res.status(404).send({ message: "User not found ." });
-    }
-    else if (userData.role === 'candidate') {
-      result = await candidateCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else if (userData.role === 'company') {
-      result = await companyCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else {
-      return res.status(400).send({ message: "Invalid role specified ." });
-    }
-
-    const photo = userData.photo;
-    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
-
-    res.send({ message: "true" });
-    console.log(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send(error);
-  }
-});
 
 
 
@@ -285,6 +245,59 @@ app.get('/specific-candidate/:email', async (req, res) => {
 })
 
 
+// update user information in role specific database
+app.put("/user-update/:email", async (req, res) => {
+  const email = req.params.email;
+  const userData = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+  console.log(userData)
+
+  try {
+    const userExist = await userCollection.findOne(filter);
+    let result;
+    if (!userExist) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    else if (userData.role === 'candidate') {
+      result = await candidateCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else if (userData.role === 'company') {
+      result = await companyCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else {
+      return res.status(400).send({ message: "Invalid role specified" });
+    }
+
+    const photo = userData.photo;
+    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
+
+    res.send({ message: "true" });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
+
+
+// get specific user data from candidates collection
+app.get('/specific-candidate/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const result = await candidateCollection.findOne({ email: email })
+    res.status(200).send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Failed' })
+  }
+})
 
 
 // Get matchingJobs data by candidate email
@@ -437,9 +450,12 @@ app.post('/apply-to-jobs', async (req, res) => {
       console.log(alreadyApplied)
 
       const userDetails = await candidateCollection.findOne({ email: emails })
+      const resume = userDetails?.resume
 
       if (!userDetails) {
         return res.send({ message: 'Please fill profile information' })
+      } else if (!resume) {
+        return res.send({ message: 'Please upload a resume' })
       }
 
       const id = userDetails?._id
@@ -455,7 +471,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       const appliedTime = new Date()
       const dndStats = 'applicant'
 
-      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
+      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats, resume });
 
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
 
@@ -866,6 +882,21 @@ app.get('/company-data', async (req, res) => {
   const result = await companyCollection.find({}).toArray();
   res.send(result);
 })
+
+app.get('/company', async (req, res) => {
+  const email = req.query.email;
+  const query = { email: email }
+  try {
+    const result = await companyCollection.findOne(query)
+    res.send(result)
+    console.log("email", email)
+  }
+  catch (error) {
+    res.send(error)
+    console.log(error);
+  }
+})
+
 
 app.delete('/delete-company/:id', async (req, res) => {
   const id = req.params.id;
@@ -1359,4 +1390,21 @@ app.post("/add-skill", async (req, res) => {
 app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
+});
+app.post('/set-resume', async (req, res) => {
+  const data = req.body;
+  const user = data.user;
+  const resume = data.resume;
+
+  try {
+    const result = await candidateCollection.findOneAndUpdate(
+      { email: user },
+      { $set: { resume: resume } },
+      { upsert: true }
+    );
+    res.send({ message: 'true' });
+    // console.log(result)
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
