@@ -53,6 +53,7 @@ const jobSectorCollection = client.db("lumijob").collection("jobSector");
 const skillSetsCollection = client.db("lumijob").collection("skillSets");
 const packageCollection = client.db("lumijob").collection("userPack");
 const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
+const challengeCollection = client.db("lumijob").collection("challenges");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -1442,3 +1443,19 @@ app.post('/set-resume', async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+
+// Collab Hub related API's  
+
+app.post('/add-challenge', async (req, res) => {
+  const data = req.body;
+  try {
+
+    const result = await challengeCollection.insertOne(data)
+    res.send(result)
+    // console.log(result)
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
