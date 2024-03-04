@@ -216,7 +216,14 @@ app.post("/sendFeedback", async (req, res) => {
 
 // website feedback for candied and company
 app.post("websiteFeedback", async(req, res) => {
-  
+  const feedbackForWebsite = req.body;
+  try {
+
+  }
+  catch (error) {
+    res.send(error);
+  }
+
 })
 
 
