@@ -52,6 +52,7 @@ const companyCommentsCollection = client.db("lumijob").collection("companyCommen
 const jobSectorCollection = client.db("lumijob").collection("jobSector");
 const skillSetsCollection = client.db("lumijob").collection("skillSets");
 const packageCollection = client.db("lumijob").collection("userPack");
+const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
 const challengeCollection = client.db("lumijob").collection("challenges");
 
 app.get("/", (req, res) => {
@@ -214,6 +215,39 @@ app.post("/sendFeedback", async (req, res) => {
     res.send(error)
   }
 });
+
+// website feedback for candied and company
+app.post("/websiteFeedback", async(req, res) => {
+  const feedbackForWebsite = req.body;
+  try {
+     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
+     res.send(postFeedback);
+  }
+  catch (error) {
+    res.send(error);
+  }
+
+})
+
+// // website feedback for candied and company
+// app.post("/websiteFeedback", async(req, res) => {
+//   const data = req.body;
+//   const email = data.email;
+//   const options = {
+//     upsert : true
+//   }
+//   try {
+//      const postFeedback = await websiteFeedbackCollection.findOneAndUpdate({email: email}, 
+//       {$set: {data}}, 
+//       {options}
+//       );
+//      res.send(postFeedback);
+//   }
+//   catch (error) {
+//     res.send(error);
+//   }
+
+// })
 
 
 app.get('/postJob', async (req, res) => {
