@@ -216,7 +216,7 @@ app.post("/sendFeedback", async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("websiteFeedback", async(req, res) => {
+app.post("/websiteFeedback", async(req, res) => {
   const feedbackForWebsite = req.body;
   try {
      const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
@@ -227,6 +227,26 @@ app.post("websiteFeedback", async(req, res) => {
   }
 
 })
+
+// // website feedback for candied and company
+// app.post("/websiteFeedback", async(req, res) => {
+//   const data = req.body;
+//   const email = data.email;
+//   const options = {
+//     upsert : true
+//   }
+//   try {
+//      const postFeedback = await websiteFeedbackCollection.findOneAndUpdate({email: email}, 
+//       {$set: {data}}, 
+//       {options}
+//       );
+//      res.send(postFeedback);
+//   }
+//   catch (error) {
+//     res.send(error);
+//   }
+
+// })
 
 
 app.get('/postJob', async (req, res) => {
