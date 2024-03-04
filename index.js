@@ -52,6 +52,7 @@ const companyCommentsCollection = client.db("lumijob").collection("companyCommen
 const jobSectorCollection = client.db("lumijob").collection("jobSector");
 const skillSetsCollection = client.db("lumijob").collection("skillSets");
 const packageCollection = client.db("lumijob").collection("userPack");
+const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
