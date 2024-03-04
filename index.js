@@ -214,6 +214,11 @@ app.post("/sendFeedback", async (req, res) => {
   }
 });
 
+// website feedback for candied and company
+app.post("websiteFeedback", async(req, res) => {
+  
+})
+
 
 app.get('/postJob', async (req, res) => {
   const cursor = jobPostsCollection.find();
