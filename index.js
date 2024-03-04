@@ -219,7 +219,8 @@ app.post("/sendFeedback", async (req, res) => {
 app.post("websiteFeedback", async(req, res) => {
   const feedbackForWebsite = req.body;
   try {
-
+     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
+     res.send(postFeedback);
   }
   catch (error) {
     res.send(error);
