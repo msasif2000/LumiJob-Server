@@ -1448,7 +1448,6 @@ app.post('/set-resume', async (req, res) => {
 
 
 // Collab Hub related API's  
-
 app.post('/add-challenge', async (req, res) => {
   const data = req.body;
   try {
@@ -1461,6 +1460,9 @@ app.post('/add-challenge', async (req, res) => {
     res.send(error)
   }
 })
+
+
+
 
 app.get("/challenges", async (req, res) => {
   const skills = await challengeCollection.find({}).toArray();
@@ -1482,24 +1484,59 @@ app.get('/challenge/:id', async (req, res) => {
 
 })
 
+
+// team 
 app.post('/teams', async (req, res) => {
   const data = req.body;
-  const leaderEmail = data.leaderEmail;
-  const query = { leaderEmail: leaderEmail }
+  const id = data.challengeId;
+
   try {
-    const exist = await teamCollection.findOne(query)
+    const exist = await challengeCollection.findOne({ _id: new ObjectId(id) });
 
-    if (exist) {
-      res.send({ message: 'already have selected plan' })
+    if (!exist.teams) {
+      exist.teams = [];
     }
-    else {
 
-      const result = await teamCollection.insertOne(data)
-      res.send({ message: 'data inserted' })
-
+    const team = exist.teams.some(team => team.memberEmail === data.memberEmail);
+    if (team) {
+      return res.send({ message: 'Already have a team with this leader' })
     }
+
+    const teamData = {
+      _id: new ObjectId(),
+      teamName: data.teamName,
+      members: [
+        {
+          name: data.memberName,
+          email: data.memberEmail,
+          img: data.memberImg,
+          designation: data.designation
+        }
+      ]
+    }
+
+    exist.teams.push(teamData)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(id) }, { $set: { teams: exist.teams } })
+
+    res.send({ message: 'data inserted' })
+
+
+    // else {
+
+    //   const result = await teamCollection.insertOne(data)
+    //   res.send({ message: 'data inserted' })
+
+    // }
   }
   catch (error) {
     res.send(error)
   }
 })
+
+
+// app.get('/teams/:challengeId', async (req, res) => {
+//   const { challengeId } = req.params;
+//   const query = { _id: new ObjectId(challengeId) };
+//   const challengeTeam = await teamCollection.find(query);
+//   res.send(challengeTeam);
+// });
