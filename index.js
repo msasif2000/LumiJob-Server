@@ -166,7 +166,7 @@ app.get("/check-which-role/:email", async (req, res) => {
 
 // ----get all user for admin--
 
-app.get("/allUsers", async (req, res) => {
+app.get("/allUsers", verifyToken, async (req, res) => {
   const allUsers = await userCollection.find({}).toArray();
   res.send(allUsers);
 });
