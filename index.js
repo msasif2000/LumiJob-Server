@@ -54,6 +54,7 @@ const skillSetsCollection = client.db("lumijob").collection("skillSets");
 const packageCollection = client.db("lumijob").collection("userPack");
 const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
 const challengeCollection = client.db("lumijob").collection("challenges");
+const teamCollection = client.db("lumijob").collection("teams");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -217,11 +218,11 @@ app.post("/sendFeedback", async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("/websiteFeedback", async(req, res) => {
+app.post("/websiteFeedback", async (req, res) => {
   const feedbackForWebsite = req.body;
   try {
-     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
-     res.send(postFeedback);
+    const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
+    res.send(postFeedback);
   }
   catch (error) {
     res.send(error);
@@ -1432,6 +1433,7 @@ app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
 });
+
 app.post('/set-resume', async (req, res) => {
   const data = req.body;
   const user = data.user;
@@ -1452,7 +1454,6 @@ app.post('/set-resume', async (req, res) => {
 
 
 // Collab Hub related API's  
-
 app.post('/add-challenge', async (req, res) => {
   const data = req.body;
   try {
@@ -1463,5 +1464,113 @@ app.post('/add-challenge', async (req, res) => {
   }
   catch (error) {
     res.send(error)
+  }
+})
+
+
+
+
+app.get("/challenges", async (req, res) => {
+  const skills = await challengeCollection.find({}).toArray();
+  res.send(skills);
+});
+
+
+app.get('/challenge/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+
+  try {
+    const result = await challengeCollection.findOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+
+})
+
+
+// team 
+app.post('/teams', async (req, res) => {
+  const data = req.body;
+  const id = data.challengeId;
+
+  try {
+    const exist = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!exist.teams) {
+      exist.teams = [];
+    }
+
+    const team = exist.teams.some(team => team.memberEmail === data.memberEmail);
+    if (team) {
+      return res.send({ message: 'Already have a team with this leader' })
+    }
+
+    const teamData = {
+      _id: new ObjectId(),
+      teamName: data.teamName,
+      members: [
+        {
+          name: data.memberName,
+          email: data.memberEmail,
+          img: data.memberImg,
+          designation: data.designation
+        }
+      ]
+    }
+
+    exist.teams.push(teamData)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(id) }, { $set: { teams: exist.teams } })
+
+    res.send({ message: 'data inserted' })
+
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+
+app.post('/add-team-member', async (req, res) => {
+  const data = req.body;
+  const id = data.challengeId;
+  const teamId = data.teamId;
+  const challengeId = data.cId;
+  const name = data.memberName;
+  const email = data.memberEmail;
+  const img = data.memberImg;
+  const designation = data.designation;
+  const status = "pending";
+  console.log(data);
+  try {
+    const challenge = await challengeCollection.findOne({ _id: new ObjectId(challengeId) });
+    if (!challenge) {
+      return res.send({ message: 'Challenge not found' });
+    }
+    const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+    if (!team) {
+      return res.send({ message: 'Team not found' })
+    }
+    const memberDetails = {
+      name: name, email: email, img: img, designation: designation, status: status
+    }
+    const exist = team.members.some(member => member.email === email);
+    if (exist) {
+      return res.send({ message: 'Already have a team with this member' })
+    }
+
+    team.members.push(memberDetails)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(challengeId) }, { $set: { teams: challenge.teams } }, { upsert: true })
+    res.send({ message: 'data inserted' })
+
+    console.log(result);
+
+  }
+  catch (err) {
+    res.send(err)
+    console.log(err)
   }
 })
