@@ -148,7 +148,7 @@ app.get("/check-role/:email", async (req, res) => {
 
 // Check what role is the user
 // Check what role is the user
-app.get("/check-which-role/:email", async (req, res) => {
+app.get("/check-which-role/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const user = await userCollection.findOne({ email: email });
