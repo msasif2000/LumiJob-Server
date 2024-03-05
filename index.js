@@ -54,6 +54,7 @@ const skillSetsCollection = client.db("lumijob").collection("skillSets");
 const packageCollection = client.db("lumijob").collection("userPack");
 const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
 const challengeCollection = client.db("lumijob").collection("challenges");
+const teamCollection = client.db("lumijob").collection("teams");
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
@@ -217,11 +218,11 @@ app.post("/sendFeedback", async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("/websiteFeedback", async(req, res) => {
+app.post("/websiteFeedback", async (req, res) => {
   const feedbackForWebsite = req.body;
   try {
-     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
-     res.send(postFeedback);
+    const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
+    res.send(postFeedback);
   }
   catch (error) {
     res.send(error);
@@ -1479,4 +1480,26 @@ app.get('/challenge/:id', async (req, res) => {
     res.send({ message: 'Error fetching data' })
   }
 
+})
+
+app.post('/teams', async (req, res) => {
+  const data = req.body;
+  const leaderEmail = data.leaderEmail;
+  const query = { leaderEmail: leaderEmail }
+  try {
+    const exist = await teamCollection.findOne(query)
+
+    if (exist) {
+      res.send({ message: 'already have selected plan' })
+    }
+    else {
+
+      const result = await teamCollection.insertOne(data)
+      res.send({ message: 'data inserted' })
+
+    }
+  }
+  catch (error) {
+    res.send(error)
+  }
 })
