@@ -732,7 +732,7 @@ app.get("/single-blog/:id", async (req, res) => {
 });
 
 // Get user for profile
-app.get("/user-profile/:email", async (req, res) => {
+app.get("/user-profile/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   try {
@@ -740,8 +740,22 @@ app.get("/user-profile/:email", async (req, res) => {
     if (!existingUser) {
       return res.status(404).send({ message: "User not found" });
     }
+    const user = await userCollection.findOne(query);
+    res.send(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
-
+app.get("/user-profile-data/:email",  async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const existingUser = await userCollection.findOne(query);
+    if (!existingUser) {
+      return res.status(404).send({ message: "User not found" });
+    }
     const user = await userCollection.findOne(query);
     res.send(user);
   } catch (error) {
@@ -831,7 +845,7 @@ app.get("/job-Search", async (req, res) => {
 
 app.get('/all-candidate-data', async (req, res) => {
   try {
-    const result = (await candidateCollection.find({}).sort({ post_time: -1 }).toArray());
+    const result = (await candidateCollection.find({}).toArray());
     res.send(result)
   }
   catch (error) {
@@ -916,20 +930,20 @@ app.get("/candidate-Search", async (req, res) => {
 // });
 
 
-app.get('/bookmarks', async (req, res) => {
+app.get('/bookmarks', verifyToken, async (req, res) => {
   const email = req.query.email;
   const query = { email: email };
   const result = await bookmarksCollection.find(query).toArray();
   res.send(result);
 });
 
-app.post('/bookmarks', async (req, res) => {
+app.post('/bookmarks', verifyToken, async (req, res) => {
   const bookmarkItem = req.body;
   const result = await bookmarksCollection.insertOne(bookmarkItem);
   res.send(result);
 });
 
-app.delete('/bookmarks/:id', async (req, res) => {
+app.delete('/bookmarks/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await bookmarksCollection.deleteOne(query);
