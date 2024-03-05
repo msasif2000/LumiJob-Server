@@ -1426,6 +1426,7 @@ app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
 });
+
 app.post('/set-resume', async (req, res) => {
   const data = req.body;
   const user = data.user;
@@ -1459,3 +1460,8 @@ app.post('/add-challenge', async (req, res) => {
     res.send(error)
   }
 })
+
+app.get("/get-challenges", async (req, res) => {
+  const skills = await challengeCollection.find({}).toArray();
+  res.send(skills);
+});
