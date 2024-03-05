@@ -108,7 +108,7 @@ app.post("/users", async (req, res) => {
 });
 
 // For Upgrading user role
-app.put("/roles/:email", async (req, res) => {
+app.put("/roles/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   const role = req.body;
