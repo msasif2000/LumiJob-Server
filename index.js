@@ -1254,7 +1254,7 @@ app.get('/dnd-selected/:id', async (req, res) => {
 });
 
 
-app.get('/selectedApplicants', async (req, res) => {
+app.get('/selectedApplicants', verifyToken, async (req, res) => {
   const { companiEmail } = req.query;
   try {
     const pipeline = [
@@ -1289,7 +1289,7 @@ app.get('/selectedApplicants', async (req, res) => {
 
 
 // for changing status of dnd cards
-app.put('/updateApplicantsStatus/:id', async (req, res) => {
+app.put('/updateApplicantsStatus/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { dndStats, jobId } = req.body;
   console.log(id, jobId, dndStats);
@@ -1331,7 +1331,7 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
 
 
 // Schedule interview
-app.post('/schedule-interview', async (req, res) => {
+app.post('/schedule-interview', verifyToken, async (req, res) => {
   const data = req.body;
   const jobId = data.jobId;
 
@@ -1395,7 +1395,7 @@ app.post('/schedule-interview', async (req, res) => {
   }
 });
 
-app.post('/delete-jobs-from-candidate', async (req, res) => {
+app.post('/delete-jobs-from-candidate', verifyToken, async (req, res) => {
   const data = req.body;
   const id = data.id
   const jobId = data.jobId;
@@ -1422,7 +1422,7 @@ app.post('/delete-jobs-from-candidate', async (req, res) => {
 
 
 //job sector post
-app.post("/add-job-sector", async (req, res) => {
+app.post("/add-job-sector", verifyToken, async (req, res) => {
   const jobSector = req.body;
   try {
     const postJobSector = await jobSectorCollection.insertOne(jobSector);
@@ -1438,7 +1438,7 @@ app.get("/get-sectors", async (req, res) => {
   res.send(sectors);
 });
 
-app.post("/add-skill", async (req, res) => {
+app.post("/add-skill", verifyToken, async (req, res) => {
   const skill = req.body;
   try {
     const postSkill = await skillSetsCollection.insertOne(skill);
@@ -1453,7 +1453,7 @@ app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
 });
-app.post('/set-resume', async (req, res) => {
+app.post('/set-resume', verifyToken, async (req, res) => {
   const data = req.body;
   const user = data.user;
   const resume = data.resume;
@@ -1474,7 +1474,7 @@ app.post('/set-resume', async (req, res) => {
 
 // Collab Hub related API's  
 
-app.post('/add-challenge', async (req, res) => {
+app.post('/add-challenge', verifyToken, async (req, res) => {
   const data = req.body;
   try {
 
