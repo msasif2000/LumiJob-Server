@@ -1,6 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -15,7 +16,22 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-
+//verify token
+const verifyToken = (req, res, next) => {
+  console.log('verify token', req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send('Unauthorized request');
+  }
+  const token = req.headers.authorization.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send('Unauthorized request');
+    }
+    req.decoded = decoded;
+    next();
+  })
+  //next();
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.apfagft.mongodb.net/`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -55,9 +71,17 @@ const packageCollection = client.db("lumijob").collection("userPack");
 const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
 const challengeCollection = client.db("lumijob").collection("challenges");
 
+
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
 });
+
+//JWT API
+app.post('/jwt', async (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+  res.send({ token });
+})
 
 //create user
 app.post("/users", async (req, res) => {
@@ -217,11 +241,11 @@ app.post("/sendFeedback", async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("/websiteFeedback", async(req, res) => {
+app.post("/websiteFeedback", async (req, res) => {
   const feedbackForWebsite = req.body;
   try {
-     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
-     res.send(postFeedback);
+    const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
+    res.send(postFeedback);
   }
   catch (error) {
     res.send(error);
