@@ -425,7 +425,7 @@ app.get("/companyFeedback/:id", async (req, res) => {
 // Website feedback for candied and company
 
 app.get("/websiteFeedback", async (req, res) => {
-  const all = await websiteFeedbackCollection.find({}).toArray();
+  const all = await websiteFeedbackCollection.find().toArray();
   res.send(all);
 });
 
