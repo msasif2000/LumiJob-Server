@@ -1520,13 +1520,6 @@ app.post('/teams', async (req, res) => {
 
     res.send({ message: 'data inserted' })
 
-
-    // else {
-
-    //   const result = await teamCollection.insertOne(data)
-    //   res.send({ message: 'data inserted' })
-
-    // }
   }
   catch (error) {
     res.send(error)
@@ -1534,9 +1527,44 @@ app.post('/teams', async (req, res) => {
 })
 
 
-// app.get('/teams/:challengeId', async (req, res) => {
-//   const { challengeId } = req.params;
-//   const query = { _id: new ObjectId(challengeId) };
-//   const challengeTeam = await teamCollection.find(query);
-//   res.send(challengeTeam);
-// });
+app.post('/add-team-member', async (req, res) => {
+  const data = req.body;
+  const id = data.challengeId;
+  const teamId = data.teamId;
+  const challengeId = data.cId;
+  const name = data.memberName;
+  const email = data.memberEmail;
+  const img = data.memberImg;
+  const designation = data.designation;
+  const status = "pending";
+  console.log(data);
+  try {
+    const challenge = await challengeCollection.findOne({ _id: new ObjectId(challengeId) });
+    if (!challenge) {
+      return res.send({ message: 'Challenge not found' });
+    }
+    const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+    if (!team) {
+      return res.send({ message: 'Team not found' })
+    }
+    const memberDetails = {
+      name: name, email: email, img: img, designation: designation, status: status
+    }
+    const exist = team.members.some(member => member.email === email);
+    if (exist) {
+      return res.send({ message: 'Already have a team with this member' })
+    }
+
+    team.members.push(memberDetails)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(challengeId) }, { $set: { teams: challenge.teams } }, { upsert: true })
+    res.send({ message: 'data inserted' })
+
+    console.log(result);
+
+  }
+  catch (err) {
+    res.send(err)
+    console.log(err)
+  }
+})
