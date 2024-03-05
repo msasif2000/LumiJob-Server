@@ -423,6 +423,12 @@ app.get("/companyFeedback/:id", async (req, res) => {
   }
 });
 
+// Website feedback for candied and company
+
+app.get("/websiteFeedback", async (req, res) => {
+  const all = await websiteFeedbackCollection.find().toArray();
+  res.send(all);
+});
 
 // post jobs api because upper api not working
 app.post('/post-jobs', async (req, res) => {
