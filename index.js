@@ -608,7 +608,7 @@ app.get(`/company-postedJobs/:email`, async (req, res) => {
 })
 
 // job deleting api for company
-app.delete('/delete-job/:id', async (req, res) => {
+app.delete('/delete-job/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const querry = { _id: id }
   const query = { _id: new ObjectId(id) }
@@ -626,7 +626,7 @@ app.delete('/delete-job/:id', async (req, res) => {
 
 
 //post the Seminar data
-app.post("/post-the-seminar", async (req, res) => {
+app.post("/post-the-seminar", verifyToken, async (req, res) => {
   const seminar = req.body;
   try {
     const postSeminar = await seminarsCollection.insertOne(seminar);
@@ -657,7 +657,7 @@ app.get("/get-posted-Seminars/:email", async (req, res) => {
 })
 
 //delete seminar
-app.delete('/delete-seminar/:id', async (req, res) => {
+app.delete('/delete-seminar/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await seminarsCollection.deleteOne(query);
@@ -665,7 +665,7 @@ app.delete('/delete-seminar/:id', async (req, res) => {
 })
 
 //post blog data
-app.post("/post-the-blog", async (req, res) => {
+app.post("/post-the-blog", verifyToken, async (req, res) => {
   const blog = req.body;
   try {
     const postBlog = await blogsCollection.insertOne(blog);
@@ -677,7 +677,7 @@ app.post("/post-the-blog", async (req, res) => {
 })
 
 //update blog data
-app.patch('/update-blog/:id', async (req, res) => {
+app.patch('/update-blog/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const update = req.body;
@@ -709,7 +709,7 @@ app.get("/get-posted-blogs/:email", async (req, res) => {
 })
 
 //delete blog
-app.delete('/delete-blog/:id', async (req, res) => {
+app.delete('/delete-blog/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await blogsCollection.deleteOne(query);
