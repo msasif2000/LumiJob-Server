@@ -1461,7 +1461,22 @@ app.post('/add-challenge', async (req, res) => {
   }
 })
 
-app.get("/get-challenges", async (req, res) => {
+app.get("/challenges", async (req, res) => {
   const skills = await challengeCollection.find({}).toArray();
   res.send(skills);
 });
+
+
+app.get('/challenge/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+
+  try {
+    const result = await challengeCollection.findOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+
+})
