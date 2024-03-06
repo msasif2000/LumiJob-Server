@@ -611,7 +611,7 @@ app.get(`/company-postedJobs/:email`, async (req, res) => {
 })
 
 // job deleting api for company
-app.delete('/delete-job/:id', async (req, res) => {
+app.delete('/delete-job/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const querry = { _id: id }
   const query = { _id: new ObjectId(id) }
@@ -629,7 +629,7 @@ app.delete('/delete-job/:id', async (req, res) => {
 
 
 //post the Seminar data
-app.post("/post-the-seminar", async (req, res) => {
+app.post("/post-the-seminar", verifyToken, async (req, res) => {
   const seminar = req.body;
   try {
     const postSeminar = await seminarsCollection.insertOne(seminar);
@@ -660,7 +660,7 @@ app.get("/get-posted-Seminars/:email", async (req, res) => {
 })
 
 //delete seminar
-app.delete('/delete-seminar/:id', async (req, res) => {
+app.delete('/delete-seminar/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await seminarsCollection.deleteOne(query);
@@ -668,7 +668,7 @@ app.delete('/delete-seminar/:id', async (req, res) => {
 })
 
 //post blog data
-app.post("/post-the-blog", async (req, res) => {
+app.post("/post-the-blog", verifyToken, async (req, res) => {
   const blog = req.body;
   try {
     const postBlog = await blogsCollection.insertOne(blog);
@@ -680,7 +680,7 @@ app.post("/post-the-blog", async (req, res) => {
 })
 
 //update blog data
-app.patch('/update-blog/:id', async (req, res) => {
+app.patch('/update-blog/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const update = req.body;
@@ -712,7 +712,7 @@ app.get("/get-posted-blogs/:email", async (req, res) => {
 })
 
 //delete blog
-app.delete('/delete-blog/:id', async (req, res) => {
+app.delete('/delete-blog/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await blogsCollection.deleteOne(query);
@@ -735,7 +735,7 @@ app.get("/single-blog/:id", async (req, res) => {
 });
 
 // Get user for profile
-app.get("/user-profile/:email", async (req, res) => {
+app.get("/user-profile/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   try {
@@ -743,8 +743,22 @@ app.get("/user-profile/:email", async (req, res) => {
     if (!existingUser) {
       return res.status(404).send({ message: "User not found" });
     }
+    const user = await userCollection.findOne(query);
+    res.send(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
-
+app.get("/user-profile-data/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const existingUser = await userCollection.findOne(query);
+    if (!existingUser) {
+      return res.status(404).send({ message: "User not found" });
+    }
     const user = await userCollection.findOne(query);
     res.send(user);
   } catch (error) {
@@ -834,7 +848,7 @@ app.get("/job-Search", async (req, res) => {
 
 app.get('/all-candidate-data', async (req, res) => {
   try {
-    const result = (await candidateCollection.find({}).sort({ post_time: -1 }).toArray());
+    const result = (await candidateCollection.find({}).toArray());
     res.send(result)
   }
   catch (error) {
@@ -919,20 +933,20 @@ app.get("/candidate-Search", async (req, res) => {
 // });
 
 
-app.get('/bookmarks', async (req, res) => {
+app.get('/bookmarks', verifyToken, async (req, res) => {
   const email = req.query.email;
   const query = { email: email };
   const result = await bookmarksCollection.find(query).toArray();
   res.send(result);
 });
 
-app.post('/bookmarks', async (req, res) => {
+app.post('/bookmarks', verifyToken, async (req, res) => {
   const bookmarkItem = req.body;
   const result = await bookmarksCollection.insertOne(bookmarkItem);
   res.send(result);
 });
 
-app.delete('/bookmarks/:id', async (req, res) => {
+app.delete('/bookmarks/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await bookmarksCollection.deleteOne(query);
@@ -940,7 +954,7 @@ app.delete('/bookmarks/:id', async (req, res) => {
 })
 
 //get Company data for Admin Panel
-app.get('/company-data', async (req, res) => {
+app.get('/company-data', verifyToken, async (req, res) => {
   const result = await companyCollection.find({}).toArray();
   res.send(result);
 })
@@ -959,8 +973,14 @@ app.get('/company', async (req, res) => {
   }
 })
 
-
-app.delete('/delete-company/:id', async (req, res) => {
+//delete posted jobs while deleting company
+app.delete('/delete-company-postedJob/:email', verifyToken, async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  const result = await jobPostsCollection.deleteMany(query);
+  res.send(result);
+})
+app.delete('/delete-company/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await companyCollection.deleteOne(query);
@@ -968,7 +988,7 @@ app.delete('/delete-company/:id', async (req, res) => {
 })
 
 //admin  =  posted jobs delate
-app.delete('/delete-jobs/:id', async (req, res) => {
+app.delete('/delete-jobs/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await jobPostsCollection.deleteOne(query);
@@ -976,7 +996,7 @@ app.delete('/delete-jobs/:id', async (req, res) => {
 })
 
 //admin  =  posted jobs delate bookmarkCollections
-app.delete('/delete-jobs-bookmarks/:id', async (req, res) => {
+app.delete('/delete-jobs-bookmarks/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { userId: id }
   const result = await bookmarksCollection.deleteOne(query);
@@ -984,7 +1004,7 @@ app.delete('/delete-jobs-bookmarks/:id', async (req, res) => {
 })
 
 //admin  =  posted jobs delate applyJobsCollection
-app.delete('/delete-jobs-applyJobsCollection/:id', async (req, res) => {
+app.delete('/delete-jobs-applyJobsCollection/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { jobId: id }
   const result = await applyJobsCollection.deleteOne(query);
@@ -997,7 +1017,7 @@ app.delete('/delete-jobs-applyJobsCollection/:id', async (req, res) => {
 
 // payment intent
 
-app.post("/create-payment-intent", async (req, res) => {
+app.post("/create-payment-intent", verifyToken, async (req, res) => {
   const { price } = req.body;
   const amount = parseInt(price * 100);
 
@@ -1013,7 +1033,7 @@ app.post("/create-payment-intent", async (req, res) => {
 })
 
 // Subscription data insert to database
-app.post('/payments', async (req, res) => {
+app.post('/payments', verifyToken, async (req, res) => {
   const payment = req.body;
   const canPost = req.body.canPost;
   const canApply = req.body.canApply;
@@ -1134,7 +1154,7 @@ app.get('/subscriptions/:planId', async (req, res) => {
 
 
 
-app.get('/payment/:email', async (req, res) => {
+app.get('/payment/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const result = await subscriptionCollection.findOne({ email: email })
@@ -1148,7 +1168,7 @@ app.get('/payment/:email', async (req, res) => {
 
 // get payment info
 
-app.get('/payment', async (req, res) => {
+app.get('/payment-data', verifyToken, async (req, res) => {
   try {
     const result = await subscriptionCollection.find().toArray();
     res.send(result);
@@ -1173,13 +1193,8 @@ app.delete('/delete-subs-plan/:id', async (req, res) => {
   }
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
-});
-
-
 // Apis for dnd data fetching
-app.get('/dnd-applicants/:id', async (req, res) => {
+app.get('/dnd-applicants/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1198,7 +1213,7 @@ app.get('/dnd-applicants/:id', async (req, res) => {
 });
 
 
-app.get('/dnd-pre-select/:id', async (req, res) => {
+app.get('/dnd-pre-select/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1217,7 +1232,7 @@ app.get('/dnd-pre-select/:id', async (req, res) => {
 });
 
 
-app.get('/dnd-interview/:id', async (req, res) => {
+app.get('/dnd-interview/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1235,7 +1250,7 @@ app.get('/dnd-interview/:id', async (req, res) => {
   }
 });
 
-app.get('/dnd-selected/:id', async (req, res) => {
+app.get('/dnd-selected/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1252,7 +1267,6 @@ app.get('/dnd-selected/:id', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
-
 
 app.get('/selectedApplicants', verifyToken, async (req, res) => {
   const { companiEmail } = req.query;
@@ -1486,3 +1500,8 @@ app.post('/add-challenge', verifyToken, async (req, res) => {
     res.send(error)
   }
 })
+
+
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+});
