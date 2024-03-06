@@ -742,7 +742,7 @@ app.get("/single-blog/:id", async (req, res) => {
 });
 
 // Get user for profile
-app.get("/user-profile/:email", verifyToken, async (req, res) => {
+app.get("/user-profile/:email", async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   try {
