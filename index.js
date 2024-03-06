@@ -1453,6 +1453,8 @@ app.post('/set-resume', async (req, res) => {
 });
 
 
+
+
 // Collab Hub related API's  
 app.post('/add-challenge', async (req, res) => {
   const data = req.body;
@@ -1491,7 +1493,7 @@ app.get('/challenge/:id', async (req, res) => {
 })
 
 
-// team 
+// add team 
 app.post('/teams', async (req, res) => {
   const data = req.body;
   const id = data.challengeId;
@@ -1503,7 +1505,7 @@ app.post('/teams', async (req, res) => {
       exist.teams = [];
     }
 
-    const team = exist.teams.some(team => team.memberEmail === data.memberEmail);
+    const team = exist.teams.some(team => team.members.map(member => member.email).includes(data.memberEmail));
     if (team) {
       return res.send({ message: 'Already have a team with this leader' })
     }
@@ -1532,6 +1534,7 @@ app.post('/teams', async (req, res) => {
   }
 })
 
+// add team member
 
 app.post('/add-team-member', async (req, res) => {
   const data = req.body;
@@ -1564,7 +1567,7 @@ app.post('/add-team-member', async (req, res) => {
 
     team.members.push(memberDetails)
     const result = await challengeCollection.updateOne({ _id: new ObjectId(challengeId) }, { $set: { teams: challenge.teams } }, { upsert: true })
-    res.send({ message: 'data inserted' })
+    res.send({ message: 'Join Request Sent' })
 
     console.log(result);
 
@@ -1574,3 +1577,47 @@ app.post('/add-team-member', async (req, res) => {
     console.log(err)
   }
 })
+
+
+
+//delete member
+
+app.post('/remove-team-member', async (req, res) => {
+  const data = req.body;
+  const id = data.id;
+  const email = data.email;
+  const teamId = data.teamId;
+  const challenge = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+  if (!challenge) {
+    return res.send({ message: 'Challenge not found' });
+  }
+
+  const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+  if (!team) {
+    return res.send({ message: 'Team not found' });
+  }
+
+  const exist = team.members.findIndex(member => member.email === email);
+
+  if (exist === -1) {
+    return res.send({ message: 'Member not found' });
+  }
+
+  const removedMember = team.members.splice(exist, 1)[0]; // Remove the member from the array and get the removed member
+
+  // Assuming you want to push the removed member to somewhere else
+  // For example, you can push it to a separate array for removed members
+  if (!team.removedMembers) {
+    team.removedMembers = [];
+  }
+  team.removedMembers.push(removedMember);
+
+  // Update the database with the modified team
+  await challengeCollection.updateOne(
+    { _id: new ObjectId(id), 'teams._id': team._id },
+    { $set: { 'teams.$.members': team.members, 'teams.$.removedMembers': team.removedMembers } }
+  );
+  res.send({ message: 'Member removed successfully' });
+});
