@@ -1687,7 +1687,8 @@ app.post('/approveMember', async (req, res) => {
     { $set: { 'teams.$.members': team.members } }
   );
 
-  res.send({ message: 'Member approved successfully' });
+  res.send({ message: 'Member approved successfully' })
+  });
   
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
