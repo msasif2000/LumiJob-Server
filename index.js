@@ -244,7 +244,7 @@ app.post("/sendFeedback", verifyToken, async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("/websiteFeedback", verifyToken, async (req, res) => {
+app.post("/websiteFeedback",  async (req, res) => {
   const feedbackForWebsite = req.body;
   try {
     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
@@ -1687,7 +1687,8 @@ app.post('/approveMember', async (req, res) => {
     { $set: { 'teams.$.members': team.members } }
   );
 
-  res.send({ message: 'Member approved successfully' });
+  res.send({ message: 'Member approved successfully' })
+  });
   
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
