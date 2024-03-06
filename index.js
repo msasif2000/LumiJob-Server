@@ -209,7 +209,7 @@ app.get('/user', async (req, res) => {
 
 // Delete user
 
-app.delete('/delCandidate/:id', async (req, res) => {
+app.delete('/delCandidate/:id',  async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await userCollection.deleteOne(query);
@@ -970,7 +970,13 @@ app.get('/company', async (req, res) => {
   }
 })
 
-
+//delete posted jobs while deleting company
+app.delete('/delete-company-postedJob/:email', verifyToken, async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  const result = await jobPostsCollection.deleteMany(query);
+  res.send(result);
+})
 app.delete('/delete-company/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
