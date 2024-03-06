@@ -108,7 +108,7 @@ app.post("/users", async (req, res) => {
 });
 
 // For Upgrading user role
-app.put("/roles/:email", async (req, res) => {
+app.put("/roles/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   const role = req.body;
@@ -148,7 +148,7 @@ app.get("/check-role/:email", async (req, res) => {
 
 // Check what role is the user
 // Check what role is the user
-app.get("/check-which-role/:email", async (req, res) => {
+app.get("/check-which-role/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const user = await userCollection.findOne({ email: email });
@@ -164,14 +164,14 @@ app.get("/check-which-role/:email", async (req, res) => {
   }
 });
 
-// ----get all user for admin--
+// ----get all user for admin-- (admin needed)
 
 app.get("/allUsers", verifyToken, async (req, res) => {
   const allUsers = await userCollection.find({}).toArray();
   res.send(allUsers);
 });
 
-// get all candidates from candidateCollection
+// get all candidates from candidateCollection (not used)
 app.get("/candidates", async (req, res) => {
   const allCandidates = await candidateCollection.find({}).toArray();
   res.send(allCandidates);
@@ -207,14 +207,16 @@ app.get('/user', async (req, res) => {
   }
 })
 
-// Delete user
+// Delete user (admin needed)
 
-app.delete('/delCandidate/:id',  async (req, res) => {
+app.delete('/delCandidate/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await userCollection.deleteOne(query);
   res.send(result);
 })
+
+// only for (company)
 
 app.post("/postJob", async (req, res) => {
   const jobPost = req.body;
@@ -228,7 +230,7 @@ app.post("/postJob", async (req, res) => {
   }
 });
 // company comments for candice
-app.post("/sendFeedback", async (req, res) => {
+app.post("/sendFeedback", verifyToken, async (req, res) => {
   const sendFeedback = req.body;
   try {
     const postJob = await companyCommentsCollection.insertOne(sendFeedback);
@@ -241,7 +243,7 @@ app.post("/sendFeedback", async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("/websiteFeedback", async (req, res) => {
+app.post("/websiteFeedback", verifyToken, async (req, res) => {
   const feedbackForWebsite = req.body;
   try {
     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
@@ -292,7 +294,7 @@ app.delete('/postJob/:id', async (req, res) => {
 
 
 // get specific user data from candidates collection
-app.get('/specific-candidate/:email', async (req, res) => {
+app.get('/specific-candidate/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const result = await candidateCollection.findOne({ email: email })
@@ -347,7 +349,7 @@ app.put("/user-update/:email", async (req, res) => {
 
 
 // get specific user data from candidates collection
-app.get('/specific-candidate/:email', async (req, res) => {
+app.get('/specific-candidate/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const result = await candidateCollection.findOne({ email: email })
@@ -360,7 +362,7 @@ app.get('/specific-candidate/:email', async (req, res) => {
 
 
 // Get matchingJobs data by candidate email
-app.get('/matchingJobs', async (req, res) => {
+app.get('/matchingJobs', verifyToken, async (req, res) => {
   const email = req.query.email;
   try {
     const candidateSkills = await candidateCollection.findOne({ email }, { projection: { _id: 0, skills: 1 } });
@@ -389,7 +391,7 @@ app.get('/matchingJobs', async (req, res) => {
 
 
 // get specific company data from company collection
-app.get('/specific-company/:email', async (req, res) => {
+app.get('/specific-company/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const result = await companyCollection.findOne({ email: email })
@@ -416,8 +418,9 @@ app.get("/company-profile/:id", async (req, res) => {
     res.status(500).send(error);
   }
 });
+
 // job post apply session
-app.get("/jobInfo/:id", async (req, res) => {
+app.get("/jobInfo/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   console.log("Received params:", req.params.id);
   const query = { _id: new ObjectId(id) };
@@ -432,7 +435,7 @@ app.get("/jobInfo/:id", async (req, res) => {
 });
 
 // company feedback get
-app.get("/companyFeedback/:id", async (req, res) => {
+app.get("/companyFeedback/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   //console.log("Received params:", req.params.id);
   const query = { jobId: id };
@@ -448,7 +451,7 @@ app.get("/companyFeedback/:id", async (req, res) => {
 
 
 // post jobs api because upper api not working
-app.post('/post-jobs', async (req, res) => {
+app.post('/post-jobs', verifyToken, async (req, res) => {
   const data = req.body;
   const email = req.body.email
   try {
@@ -476,7 +479,7 @@ app.post('/post-jobs', async (req, res) => {
 
 // Post users applied jobs to database. and update job collection with userData
 
-app.post('/apply-to-jobs', async (req, res) => {
+app.post('/apply-to-jobs', verifyToken, async (req, res) => {
   const job = req.body;
   const emails = req.body.candidate;
   const jobId = job.jobId;
@@ -555,7 +558,7 @@ app.post('/apply-to-jobs', async (req, res) => {
 });
 
 // get applied jobs back
-app.get('/get-applied-jobs/:email', async (req, res) => {
+app.get('/get-applied-jobs/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { candidate: email }
   try {
@@ -569,7 +572,7 @@ app.get('/get-applied-jobs/:email', async (req, res) => {
 
 // get applied job data access from particular company 
 
-app.get('/get-applied-jobs-com/:email', async (req, res) => {
+app.get('/get-applied-jobs-com/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email }
   try {
@@ -582,7 +585,7 @@ app.get('/get-applied-jobs-com/:email', async (req, res) => {
 })
 
 
-app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
+app.get(`/get-company-posted-jobs/:email`, verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email }
   try {
@@ -1265,7 +1268,7 @@ app.get('/dnd-selected/:id', verifyToken, async (req, res) => {
   }
 });
 
-app.get('/selectedApplicants', async (req, res) => {
+app.get('/selectedApplicants', verifyToken, async (req, res) => {
   const { companiEmail } = req.query;
   try {
     const pipeline = [
@@ -1300,7 +1303,7 @@ app.get('/selectedApplicants', async (req, res) => {
 
 
 // for changing status of dnd cards
-app.put('/updateApplicantsStatus/:id', async (req, res) => {
+app.put('/updateApplicantsStatus/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { dndStats, jobId } = req.body;
   console.log(id, jobId, dndStats);
@@ -1342,7 +1345,7 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
 
 
 // Schedule interview
-app.post('/schedule-interview', async (req, res) => {
+app.post('/schedule-interview', verifyToken, async (req, res) => {
   const data = req.body;
   const jobId = data.jobId;
 
@@ -1406,7 +1409,7 @@ app.post('/schedule-interview', async (req, res) => {
   }
 });
 
-app.post('/delete-jobs-from-candidate', async (req, res) => {
+app.post('/delete-jobs-from-candidate', verifyToken, async (req, res) => {
   const data = req.body;
   const id = data.id
   const jobId = data.jobId;
@@ -1433,7 +1436,7 @@ app.post('/delete-jobs-from-candidate', async (req, res) => {
 
 
 //job sector post
-app.post("/add-job-sector", async (req, res) => {
+app.post("/add-job-sector", verifyToken, async (req, res) => {
   const jobSector = req.body;
   try {
     const postJobSector = await jobSectorCollection.insertOne(jobSector);
@@ -1449,7 +1452,7 @@ app.get("/get-sectors", async (req, res) => {
   res.send(sectors);
 });
 
-app.post("/add-skill", async (req, res) => {
+app.post("/add-skill", verifyToken, async (req, res) => {
   const skill = req.body;
   try {
     const postSkill = await skillSetsCollection.insertOne(skill);
@@ -1464,7 +1467,7 @@ app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
 });
-app.post('/set-resume', async (req, res) => {
+app.post('/set-resume', verifyToken, async (req, res) => {
   const data = req.body;
   const user = data.user;
   const resume = data.resume;
@@ -1485,7 +1488,7 @@ app.post('/set-resume', async (req, res) => {
 
 // Collab Hub related API's  
 
-app.post('/add-challenge', async (req, res) => {
+app.post('/add-challenge', verifyToken, async (req, res) => {
   const data = req.body;
   try {
 
