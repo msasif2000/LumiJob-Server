@@ -1546,7 +1546,6 @@ app.post('/add-team-member', async (req, res) => {
   const img = data.memberImg;
   const designation = data.designation;
   const status = "pending";
-  console.log(data);
   try {
     const challenge = await challengeCollection.findOne({ _id: new ObjectId(challengeId) });
     if (!challenge) {
@@ -1569,7 +1568,6 @@ app.post('/add-team-member', async (req, res) => {
     const result = await challengeCollection.updateOne({ _id: new ObjectId(challengeId) }, { $set: { teams: challenge.teams } }, { upsert: true })
     res.send({ message: 'Join Request Sent' })
 
-    console.log(result);
 
   }
   catch (err) {
@@ -1605,19 +1603,51 @@ app.post('/remove-team-member', async (req, res) => {
     return res.send({ message: 'Member not found' });
   }
 
-  const removedMember = team.members.splice(exist, 1)[0]; // Remove the member from the array and get the removed member
-
-  // Assuming you want to push the removed member to somewhere else
-  // For example, you can push it to a separate array for removed members
+  const removedMember = team.members.splice(exist, 1)[0];
   if (!team.removedMembers) {
     team.removedMembers = [];
   }
   team.removedMembers.push(removedMember);
 
-  // Update the database with the modified team
   await challengeCollection.updateOne(
     { _id: new ObjectId(id), 'teams._id': team._id },
     { $set: { 'teams.$.members': team.members, 'teams.$.removedMembers': team.removedMembers } }
   );
   res.send({ message: 'Member removed successfully' });
+});
+
+
+//approve member
+app.post('/approveMember', async (req, res) => {
+  const data = req.body;
+  const id = data.id;
+  const memberEmail = data.email;
+  const teamId = data.teamId;
+  const challenge = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+  if (!challenge) {
+    return res.send({ message: 'Challenge not found' });
+  }
+
+  const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+  if (!team) {
+    return res.send({ message: 'Team not found' });
+  }
+
+  const exist = team.members.findIndex(member => member.email === memberEmail);
+  if (exist === -1) {
+    return res.send({ message: 'Member not found' });
+  }
+
+  // Remove the status property from the specific member
+  delete team.members[exist].status;
+
+  // Update the document in the collection
+  await challengeCollection.updateOne(
+    { _id: new ObjectId(id), 'teams._id': new ObjectId(teamId) },
+    { $set: { 'teams.$.members': team.members } }
+  );
+
+  res.send({ message: 'Member approved successfully' });
 });
