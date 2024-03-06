@@ -954,7 +954,7 @@ app.delete('/bookmarks/:id', verifyToken, async (req, res) => {
 })
 
 //get Company data for Admin Panel
-app.get('/company-data', verifyToken, async (req, res) => {
+app.get('/company-data', async (req, res) => {
   const result = await companyCollection.find({}).toArray();
   res.send(result);
 })
