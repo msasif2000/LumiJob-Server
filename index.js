@@ -70,6 +70,7 @@ const skillSetsCollection = client.db("lumijob").collection("skillSets");
 const packageCollection = client.db("lumijob").collection("userPack");
 const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
 const challengeCollection = client.db("lumijob").collection("challenges");
+const teamCollection = client.db("lumijob").collection("teams");
 
 
 app.get("/", (req, res) => {
@@ -449,6 +450,12 @@ app.get("/companyFeedback/:id", verifyToken, async (req, res) => {
   }
 });
 
+// Website feedback for candied and company
+
+app.get("/websiteFeedback", async (req, res) => {
+  const all = await websiteFeedbackCollection.find().toArray();
+  res.send(all);
+});
 
 // post jobs api because upper api not working
 app.post('/post-jobs', verifyToken, async (req, res) => {
@@ -1467,6 +1474,7 @@ app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
 });
+
 app.post('/set-resume', verifyToken, async (req, res) => {
   const data = req.body;
   const user = data.user;
@@ -1485,7 +1493,6 @@ app.post('/set-resume', verifyToken, async (req, res) => {
   }
 });
 
-
 // Collab Hub related API's  
 
 app.post('/add-challenge', verifyToken, async (req, res) => {
@@ -1502,6 +1509,187 @@ app.post('/add-challenge', verifyToken, async (req, res) => {
 })
 
 
+
+app.get("/challenges", async (req, res) => {
+  const skills = await challengeCollection.find({}).toArray();
+  res.send(skills);
+});
+
+
+app.get('/challenge/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+
+  try {
+    const result = await challengeCollection.findOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+
+})
+
+
+// add team 
+app.post('/teams', async (req, res) => {
+  const data = req.body;
+  const id = data.challengeId;
+
+  try {
+    const exist = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!exist.teams) {
+      exist.teams = [];
+    }
+
+    const team = exist.teams.some(team => team.members.map(member => member.email).includes(data.memberEmail));
+    if (team) {
+      return res.send({ message: 'Already have a team with this leader' })
+    }
+
+    const teamData = {
+      _id: new ObjectId(),
+      teamName: data.teamName,
+      members: [
+        {
+          name: data.memberName,
+          email: data.memberEmail,
+          img: data.memberImg,
+          designation: data.designation
+        }
+      ]
+    }
+
+    exist.teams.push(teamData)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(id) }, { $set: { teams: exist.teams } })
+
+    res.send({ message: 'data inserted' })
+
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+// add team member
+
+app.post('/add-team-member', async (req, res) => {
+  const data = req.body;
+  const id = data.challengeId;
+  const teamId = data.teamId;
+  const challengeId = data.cId;
+  const name = data.memberName;
+  const email = data.memberEmail;
+  const img = data.memberImg;
+  const designation = data.designation;
+  const status = "pending";
+  try {
+    const challenge = await challengeCollection.findOne({ _id: new ObjectId(challengeId) });
+    if (!challenge) {
+      return res.send({ message: 'Challenge not found' });
+    }
+    const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+    if (!team) {
+      return res.send({ message: 'Team not found' })
+    }
+    const memberDetails = {
+      name: name, email: email, img: img, designation: designation, status: status
+    }
+    const exist = team.members.some(member => member.email === email);
+    if (exist) {
+      return res.send({ message: 'Already have a team with this member' })
+    }
+
+    team.members.push(memberDetails)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(challengeId) }, { $set: { teams: challenge.teams } }, { upsert: true })
+    res.send({ message: 'Join Request Sent' })
+
+
+  }
+  catch (err) {
+    res.send(err)
+    console.log(err)
+  }
+})
+
+
+
+//delete member
+
+app.post('/remove-team-member', async (req, res) => {
+  const data = req.body;
+  const id = data.id;
+  const email = data.email;
+  const teamId = data.teamId;
+  const challenge = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+  if (!challenge) {
+    return res.send({ message: 'Challenge not found' });
+  }
+
+  const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+  if (!team) {
+    return res.send({ message: 'Team not found' });
+  }
+
+  const exist = team.members.findIndex(member => member.email === email);
+
+  if (exist === -1) {
+    return res.send({ message: 'Member not found' });
+  }
+
+  const removedMember = team.members.splice(exist, 1)[0];
+  if (!team.removedMembers) {
+    team.removedMembers = [];
+  }
+  team.removedMembers.push(removedMember);
+
+  await challengeCollection.updateOne(
+    { _id: new ObjectId(id), 'teams._id': team._id },
+    { $set: { 'teams.$.members': team.members, 'teams.$.removedMembers': team.removedMembers } }
+  );
+  res.send({ message: 'Member removed successfully' });
+});
+
+
+//approve member
+app.post('/approveMember', async (req, res) => {
+  const data = req.body;
+  const id = data.id;
+  const memberEmail = data.email;
+  const teamId = data.teamId;
+  const challenge = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+  if (!challenge) {
+    return res.send({ message: 'Challenge not found' });
+  }
+
+  const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+  if (!team) {
+    return res.send({ message: 'Team not found' });
+  }
+
+  const exist = team.members.findIndex(member => member.email === memberEmail);
+  if (exist === -1) {
+    return res.send({ message: 'Member not found' });
+  }
+
+  // Remove the status property from the specific member
+  delete team.members[exist].status;
+
+  // Update the document in the collection
+  await challengeCollection.updateOne(
+    { _id: new ObjectId(id), 'teams._id': new ObjectId(teamId) },
+    { $set: { 'teams.$.members': team.members } }
+  );
+
+  res.send({ message: 'Member approved successfully' });
+  
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
+
 });
