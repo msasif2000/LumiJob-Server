@@ -243,7 +243,7 @@ app.post("/sendFeedback", verifyToken, async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("/websiteFeedback", verifyToken, async (req, res) => {
+app.post("/websiteFeedback",  async (req, res) => {
   const feedbackForWebsite = req.body;
   try {
     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
