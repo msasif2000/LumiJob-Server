@@ -1,6 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
@@ -9,13 +10,28 @@ const port = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "https://lumijobs-84d3b.web.app"],
+    origin: ["http://localhost:5173", "http://localhost:5174", "https://lumijobs-84d3b.web.app", "https://lumijobs.tech"],
   })
 );
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-
+//verify token
+const verifyToken = (req, res, next) => {
+  console.log('verify token', req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send('Unauthorized request');
+  }
+  const token = req.headers.authorization.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send('Unauthorized request');
+    }
+    req.decoded = decoded;
+    next();
+  })
+  //next();
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.apfagft.mongodb.net/`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -52,10 +68,21 @@ const companyCommentsCollection = client.db("lumijob").collection("companyCommen
 const jobSectorCollection = client.db("lumijob").collection("jobSector");
 const skillSetsCollection = client.db("lumijob").collection("skillSets");
 const packageCollection = client.db("lumijob").collection("userPack");
+const websiteFeedbackCollection = client.db("lumijob").collection("websiteFeedback");
+const challengeCollection = client.db("lumijob").collection("challenges");
+const teamCollection = client.db("lumijob").collection("teams");
+
 
 app.get("/", (req, res) => {
   res.send("Welcome to LumiJob");
 });
+
+//JWT API
+app.post('/jwt', async (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+  res.send({ token });
+})
 
 //create user
 app.post("/users", async (req, res) => {
@@ -82,7 +109,7 @@ app.post("/users", async (req, res) => {
 });
 
 // For Upgrading user role
-app.put("/roles/:email", async (req, res) => {
+app.put("/roles/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
   const role = req.body;
@@ -122,7 +149,7 @@ app.get("/check-role/:email", async (req, res) => {
 
 // Check what role is the user
 // Check what role is the user
-app.get("/check-which-role/:email", async (req, res) => {
+app.get("/check-which-role/:email", verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const user = await userCollection.findOne({ email: email });
@@ -138,14 +165,14 @@ app.get("/check-which-role/:email", async (req, res) => {
   }
 });
 
-// ----get all user for admin--
+// ----get all user for admin-- (admin needed)
 
-app.get("/allUsers", async (req, res) => {
+app.get("/allUsers", verifyToken, async (req, res) => {
   const allUsers = await userCollection.find({}).toArray();
   res.send(allUsers);
 });
 
-// get all candidates from candidateCollection
+// get all candidates from candidateCollection (not used)
 app.get("/candidates", async (req, res) => {
   const allCandidates = await candidateCollection.find({}).toArray();
   res.send(allCandidates);
@@ -181,14 +208,16 @@ app.get('/user', async (req, res) => {
   }
 })
 
-// Delete user
+// Delete user (admin needed)
 
-app.delete('/delCandidate/:id', async (req, res) => {
+app.delete('/delCandidate/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await userCollection.deleteOne(query);
   res.send(result);
 })
+
+// only for (company)
 
 app.post("/postJob", async (req, res) => {
   const jobPost = req.body;
@@ -202,7 +231,7 @@ app.post("/postJob", async (req, res) => {
   }
 });
 // company comments for candice
-app.post("/sendFeedback", async (req, res) => {
+app.post("/sendFeedback", verifyToken, async (req, res) => {
   const sendFeedback = req.body;
   try {
     const postJob = await companyCommentsCollection.insertOne(sendFeedback);
@@ -213,6 +242,39 @@ app.post("/sendFeedback", async (req, res) => {
     res.send(error)
   }
 });
+
+// website feedback for candied and company
+app.post("/websiteFeedback", async (req, res) => {
+  const feedbackForWebsite = req.body;
+  try {
+    const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
+    res.send(postFeedback);
+  }
+  catch (error) {
+    res.send(error);
+  }
+
+})
+
+// // website feedback for candied and company
+// app.post("/websiteFeedback", async(req, res) => {
+//   const data = req.body;
+//   const email = data.email;
+//   const options = {
+//     upsert : true
+//   }
+//   try {
+//      const postFeedback = await websiteFeedbackCollection.findOneAndUpdate({email: email}, 
+//       {$set: {data}}, 
+//       {options}
+//       );
+//      res.send(postFeedback);
+//   }
+//   catch (error) {
+//     res.send(error);
+//   }
+
+// })
 
 
 app.get('/postJob', async (req, res) => {
@@ -229,46 +291,6 @@ app.delete('/postJob/:id', async (req, res) => {
   res.send(result);
 })
 
-// update user information in role specific database
-app.put("/user-update/:email", async (req, res) => {
-  const email = req.params.email;
-  const userData = req.body;
-  const filter = { email: email };
-  const options = { upsert: true };
-  console.log(userData)
-
-  try {
-    const userExist = await userCollection.findOne(filter);
-    let result;
-    if (!userExist) {
-      return res.status(404).send({ message: "User not found ." });
-    }
-    else if (userData.role === 'candidate') {
-      result = await candidateCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else if (userData.role === 'company') {
-      result = await companyCollection.findOneAndUpdate(
-        filter,
-        { $set: userData },
-        options
-      );
-    } else {
-      return res.status(400).send({ message: "Invalid role specified ." });
-    }
-
-    const photo = userData.photo;
-    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
-
-    res.send({ message: "true" });
-    console.log(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send(error);
-  }
-});
 
 
 
@@ -285,10 +307,63 @@ app.get('/specific-candidate/:email', async (req, res) => {
 })
 
 
+// update user information in role specific database
+app.put("/user-update/:email", async (req, res) => {
+  const email = req.params.email;
+  const userData = req.body;
+  const filter = { email: email };
+  const options = { upsert: true };
+  console.log(userData)
+
+  try {
+    const userExist = await userCollection.findOne(filter);
+    let result;
+    if (!userExist) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    else if (userData.role === 'candidate') {
+      result = await candidateCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else if (userData.role === 'company') {
+      result = await companyCollection.findOneAndUpdate(
+        filter,
+        { $set: userData },
+        options
+      );
+    } else {
+      return res.status(400).send({ message: "Invalid role specified" });
+    }
+
+    const photo = userData.photo;
+    const update = await userCollection.findOneAndUpdate(filter, { $set: { photo } }, options);
+
+    res.send({ message: "true" });
+    console.log(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
+
+
+// get specific user data from candidates collection
+// app.get('/specific-candidate/:email', verifyToken, async (req, res) => {
+//   const email = req.params.email;
+//   try {
+//     const result = await candidateCollection.findOne({ email: email })
+//     res.status(200).send(result)
+//   }
+//   catch (error) {
+//     res.send({ message: 'Failed' })
+//   }
+// })
 
 
 // Get matchingJobs data by candidate email
-app.get('/matchingJobs', async (req, res) => {
+app.get('/matchingJobs', verifyToken, async (req, res) => {
   const email = req.query.email;
   try {
     const candidateSkills = await candidateCollection.findOne({ email }, { projection: { _id: 0, skills: 1 } });
@@ -317,7 +392,7 @@ app.get('/matchingJobs', async (req, res) => {
 
 
 // get specific company data from company collection
-app.get('/specific-company/:email', async (req, res) => {
+app.get('/specific-company/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const result = await companyCollection.findOne({ email: email })
@@ -344,8 +419,9 @@ app.get("/company-profile/:id", async (req, res) => {
     res.status(500).send(error);
   }
 });
+
 // job post apply session
-app.get("/jobInfo/:id", async (req, res) => {
+app.get("/jobInfo/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   console.log("Received params:", req.params.id);
   const query = { _id: new ObjectId(id) };
@@ -360,7 +436,7 @@ app.get("/jobInfo/:id", async (req, res) => {
 });
 
 // company feedback get
-app.get("/companyFeedback/:id", async (req, res) => {
+app.get("/companyFeedback/:id", verifyToken, async (req, res) => {
   const id = req.params.id;
   //console.log("Received params:", req.params.id);
   const query = { jobId: id };
@@ -374,9 +450,15 @@ app.get("/companyFeedback/:id", async (req, res) => {
   }
 });
 
+// Website feedback for candied and company
+
+app.get("/websiteFeedback", async (req, res) => {
+  const all = await websiteFeedbackCollection.find().toArray();
+  res.send(all);
+});
 
 // post jobs api because upper api not working
-app.post('/post-jobs', async (req, res) => {
+app.post('/post-jobs', verifyToken, async (req, res) => {
   const data = req.body;
   const email = req.body.email
   try {
@@ -404,7 +486,7 @@ app.post('/post-jobs', async (req, res) => {
 
 // Post users applied jobs to database. and update job collection with userData
 
-app.post('/apply-to-jobs', async (req, res) => {
+app.post('/apply-to-jobs', verifyToken, async (req, res) => {
   const job = req.body;
   const emails = req.body.candidate;
   const jobId = job.jobId;
@@ -437,9 +519,12 @@ app.post('/apply-to-jobs', async (req, res) => {
       console.log(alreadyApplied)
 
       const userDetails = await candidateCollection.findOne({ email: emails })
+      const resume = userDetails?.resume
 
       if (!userDetails) {
         return res.send({ message: 'Please fill profile information' })
+      } else if (!resume) {
+        return res.send({ message: 'Please upload a resume' })
       }
 
       const id = userDetails?._id
@@ -455,7 +540,7 @@ app.post('/apply-to-jobs', async (req, res) => {
       const appliedTime = new Date()
       const dndStats = 'applicant'
 
-      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats });
+      findJob.applicants.push({ id, email, name, profile, city, country, position, premium, minSalary, maxSalary, appliedTime, dndStats, resume });
 
       const result = await jobPostsCollection.updateOne({ _id: new ObjectId(jobId) }, { $set: { applicants: findJob.applicants } });
 
@@ -480,7 +565,7 @@ app.post('/apply-to-jobs', async (req, res) => {
 });
 
 // get applied jobs back
-app.get('/get-applied-jobs/:email', async (req, res) => {
+app.get('/get-applied-jobs/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { candidate: email }
   try {
@@ -494,7 +579,7 @@ app.get('/get-applied-jobs/:email', async (req, res) => {
 
 // get applied job data access from particular company 
 
-app.get('/get-applied-jobs-com/:email', async (req, res) => {
+app.get('/get-applied-jobs-com/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email }
   try {
@@ -507,7 +592,7 @@ app.get('/get-applied-jobs-com/:email', async (req, res) => {
 })
 
 
-app.get(`/get-company-posted-jobs/:email`, async (req, res) => {
+app.get(`/get-company-posted-jobs/:email`, verifyToken, async (req, res) => {
   const email = req.params.email;
   const query = { email: email }
   try {
@@ -533,7 +618,7 @@ app.get(`/company-postedJobs/:email`, async (req, res) => {
 })
 
 // job deleting api for company
-app.delete('/delete-job/:id', async (req, res) => {
+app.delete('/delete-job/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const querry = { _id: id }
   const query = { _id: new ObjectId(id) }
@@ -551,7 +636,7 @@ app.delete('/delete-job/:id', async (req, res) => {
 
 
 //post the Seminar data
-app.post("/post-the-seminar", async (req, res) => {
+app.post("/post-the-seminar", verifyToken, async (req, res) => {
   const seminar = req.body;
   try {
     const postSeminar = await seminarsCollection.insertOne(seminar);
@@ -582,7 +667,7 @@ app.get("/get-posted-Seminars/:email", async (req, res) => {
 })
 
 //delete seminar
-app.delete('/delete-seminar/:id', async (req, res) => {
+app.delete('/delete-seminar/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await seminarsCollection.deleteOne(query);
@@ -590,7 +675,7 @@ app.delete('/delete-seminar/:id', async (req, res) => {
 })
 
 //post blog data
-app.post("/post-the-blog", async (req, res) => {
+app.post("/post-the-blog", verifyToken, async (req, res) => {
   const blog = req.body;
   try {
     const postBlog = await blogsCollection.insertOne(blog);
@@ -602,7 +687,7 @@ app.post("/post-the-blog", async (req, res) => {
 })
 
 //update blog data
-app.patch('/update-blog/:id', async (req, res) => {
+app.patch('/update-blog/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const update = req.body;
@@ -634,7 +719,7 @@ app.get("/get-posted-blogs/:email", async (req, res) => {
 })
 
 //delete blog
-app.delete('/delete-blog/:id', async (req, res) => {
+app.delete('/delete-blog/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await blogsCollection.deleteOne(query);
@@ -665,8 +750,22 @@ app.get("/user-profile/:email", async (req, res) => {
     if (!existingUser) {
       return res.status(404).send({ message: "User not found" });
     }
+    const user = await userCollection.findOne(query);
+    res.send(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+});
 
-
+app.get("/user-profile-data/:email", async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  try {
+    const existingUser = await userCollection.findOne(query);
+    if (!existingUser) {
+      return res.status(404).send({ message: "User not found" });
+    }
     const user = await userCollection.findOne(query);
     res.send(user);
   } catch (error) {
@@ -756,7 +855,7 @@ app.get("/job-Search", async (req, res) => {
 
 app.get('/all-candidate-data', async (req, res) => {
   try {
-    const result = (await candidateCollection.find({}).sort({ post_time: -1 }).toArray());
+    const result = (await candidateCollection.find({}).toArray());
     res.send(result)
   }
   catch (error) {
@@ -841,20 +940,20 @@ app.get("/candidate-Search", async (req, res) => {
 // });
 
 
-app.get('/bookmarks', async (req, res) => {
+app.get('/bookmarks', verifyToken, async (req, res) => {
   const email = req.query.email;
   const query = { email: email };
   const result = await bookmarksCollection.find(query).toArray();
   res.send(result);
 });
 
-app.post('/bookmarks', async (req, res) => {
+app.post('/bookmarks', verifyToken, async (req, res) => {
   const bookmarkItem = req.body;
   const result = await bookmarksCollection.insertOne(bookmarkItem);
   res.send(result);
 });
 
-app.delete('/bookmarks/:id', async (req, res) => {
+app.delete('/bookmarks/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await bookmarksCollection.deleteOne(query);
@@ -867,15 +966,58 @@ app.get('/company-data', async (req, res) => {
   res.send(result);
 })
 
-app.delete('/delete-company/:id', async (req, res) => {
+app.get('/company', async (req, res) => {
+  const email = req.query.email;
+  const query = { email: email }
+  try {
+    const result = await companyCollection.findOne(query)
+    res.send(result)
+    console.log("email", email)
+  }
+  catch (error) {
+    res.send(error)
+    console.log(error);
+  }
+})
+
+//delete posted jobs while deleting company
+app.delete('/delete-company-postedJob/:email', verifyToken, async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  const result = await jobPostsCollection.deleteMany(query);
+  if (result) {
+    res.send(result);
+  }
+  else {
+    res.send(true);
+  }
+})
+app.delete('/delete-company-from-companies/:email', verifyToken, async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  const result = await candidateCollection.deleteOne(query);
+  if (result) {
+    res.send(result);
+  }
+  else {
+    res.send(true);
+  }
+})
+
+app.delete('/delete-company/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
-  const result = await companyCollection.deleteOne(query);
-  res.send(result);
+  const result = await userCollection.deleteOne(query);
+  if(result){
+    res.send(result);
+  }
+  else {
+    res.send(true);
+  }
 })
 
 //admin  =  posted jobs delate
-app.delete('/delete-jobs/:id', async (req, res) => {
+app.delete('/delete-jobs/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await jobPostsCollection.deleteOne(query);
@@ -883,7 +1025,7 @@ app.delete('/delete-jobs/:id', async (req, res) => {
 })
 
 //admin  =  posted jobs delate bookmarkCollections
-app.delete('/delete-jobs-bookmarks/:id', async (req, res) => {
+app.delete('/delete-jobs-bookmarks/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { userId: id }
   const result = await bookmarksCollection.deleteOne(query);
@@ -891,7 +1033,7 @@ app.delete('/delete-jobs-bookmarks/:id', async (req, res) => {
 })
 
 //admin  =  posted jobs delate applyJobsCollection
-app.delete('/delete-jobs-applyJobsCollection/:id', async (req, res) => {
+app.delete('/delete-jobs-applyJobsCollection/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { jobId: id }
   const result = await applyJobsCollection.deleteOne(query);
@@ -904,7 +1046,7 @@ app.delete('/delete-jobs-applyJobsCollection/:id', async (req, res) => {
 
 // payment intent
 
-app.post("/create-payment-intent", async (req, res) => {
+app.post("/create-payment-intent", verifyToken, async (req, res) => {
   const { price } = req.body;
   const amount = parseInt(price * 100);
 
@@ -920,7 +1062,7 @@ app.post("/create-payment-intent", async (req, res) => {
 })
 
 // Subscription data insert to database
-app.post('/payments', async (req, res) => {
+app.post('/payments', verifyToken, async (req, res) => {
   const payment = req.body;
   const canPost = req.body.canPost;
   const canApply = req.body.canApply;
@@ -1041,7 +1183,7 @@ app.get('/subscriptions/:planId', async (req, res) => {
 
 
 
-app.get('/payment/:email', async (req, res) => {
+app.get('/payment/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
   try {
     const result = await subscriptionCollection.findOne({ email: email })
@@ -1055,7 +1197,7 @@ app.get('/payment/:email', async (req, res) => {
 
 // get payment info
 
-app.get('/payment', async (req, res) => {
+app.get('/payment-data', verifyToken, async (req, res) => {
   try {
     const result = await subscriptionCollection.find().toArray();
     res.send(result);
@@ -1080,13 +1222,8 @@ app.delete('/delete-subs-plan/:id', async (req, res) => {
   }
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
-});
-
-
 // Apis for dnd data fetching
-app.get('/dnd-applicants/:id', async (req, res) => {
+app.get('/dnd-applicants/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1105,7 +1242,7 @@ app.get('/dnd-applicants/:id', async (req, res) => {
 });
 
 
-app.get('/dnd-pre-select/:id', async (req, res) => {
+app.get('/dnd-pre-select/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1124,7 +1261,7 @@ app.get('/dnd-pre-select/:id', async (req, res) => {
 });
 
 
-app.get('/dnd-interview/:id', async (req, res) => {
+app.get('/dnd-interview/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1142,7 +1279,7 @@ app.get('/dnd-interview/:id', async (req, res) => {
   }
 });
 
-app.get('/dnd-selected/:id', async (req, res) => {
+app.get('/dnd-selected/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
 
   try {
@@ -1160,8 +1297,7 @@ app.get('/dnd-selected/:id', async (req, res) => {
   }
 });
 
-
-app.get('/selectedApplicants', async (req, res) => {
+app.get('/selectedApplicants', verifyToken, async (req, res) => {
   const { companiEmail } = req.query;
   try {
     const pipeline = [
@@ -1196,7 +1332,7 @@ app.get('/selectedApplicants', async (req, res) => {
 
 
 // for changing status of dnd cards
-app.put('/updateApplicantsStatus/:id', async (req, res) => {
+app.put('/updateApplicantsStatus/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   const { dndStats, jobId } = req.body;
   console.log(id, jobId, dndStats);
@@ -1238,7 +1374,7 @@ app.put('/updateApplicantsStatus/:id', async (req, res) => {
 
 
 // Schedule interview
-app.post('/schedule-interview', async (req, res) => {
+app.post('/schedule-interview', verifyToken, async (req, res) => {
   const data = req.body;
   const jobId = data.jobId;
 
@@ -1302,7 +1438,7 @@ app.post('/schedule-interview', async (req, res) => {
   }
 });
 
-app.post('/delete-jobs-from-candidate', async (req, res) => {
+app.post('/delete-jobs-from-candidate', verifyToken, async (req, res) => {
   const data = req.body;
   const id = data.id
   const jobId = data.jobId;
@@ -1329,7 +1465,7 @@ app.post('/delete-jobs-from-candidate', async (req, res) => {
 
 
 //job sector post
-app.post("/add-job-sector", async (req, res) => {
+app.post("/add-job-sector", verifyToken, async (req, res) => {
   const jobSector = req.body;
   try {
     const postJobSector = await jobSectorCollection.insertOne(jobSector);
@@ -1345,7 +1481,7 @@ app.get("/get-sectors", async (req, res) => {
   res.send(sectors);
 });
 
-app.post("/add-skill", async (req, res) => {
+app.post("/add-skill", verifyToken, async (req, res) => {
   const skill = req.body;
   try {
     const postSkill = await skillSetsCollection.insertOne(skill);
@@ -1359,4 +1495,224 @@ app.post("/add-skill", async (req, res) => {
 app.get("/get-skills", async (req, res) => {
   const skills = await skillSetsCollection.find({}).toArray();
   res.send(skills);
+});
+
+app.post('/set-resume', verifyToken, async (req, res) => {
+  const data = req.body;
+  const user = data.user;
+  const resume = data.resume;
+
+  try {
+    const result = await candidateCollection.findOneAndUpdate(
+      { email: user },
+      { $set: { resume: resume } },
+      { upsert: true }
+    );
+    res.send({ message: 'true' });
+    // console.log(result)
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+// Collab Hub related API's  
+
+app.post('/add-challenge', verifyToken, async (req, res) => {
+  const data = req.body;
+  try {
+
+    const result = await challengeCollection.insertOne(data)
+    res.send(result)
+    // console.log(result)
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+
+
+app.get("/challenges", async (req, res) => {
+  const skills = await challengeCollection.find({}).toArray();
+  res.send(skills);
+});
+
+
+app.get('/challenge/:id', async (req, res) => {
+  const id = req.params.id
+  const query = { _id: new ObjectId(id) }
+
+  try {
+    const result = await challengeCollection.findOne(query)
+    res.send(result)
+  }
+  catch (error) {
+    res.send({ message: 'Error fetching data' })
+  }
+
+})
+
+
+// add team 
+app.post('/teams', async (req, res) => {
+  const data = req.body;
+  const id = data.challengeId;
+
+  try {
+    const exist = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!exist.teams) {
+      exist.teams = [];
+    }
+
+    const team = exist.teams.some(team => team.members.map(member => member.email).includes(data.memberEmail));
+    if (team) {
+      return res.send({ message: 'Already have a team with this leader' })
+    }
+
+    const teamData = {
+      _id: new ObjectId(),
+      teamName: data.teamName,
+      members: [
+        {
+          name: data.memberName,
+          email: data.memberEmail,
+          img: data.memberImg,
+          designation: data.designation
+        }
+      ]
+    }
+
+    exist.teams.push(teamData)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(id) }, { $set: { teams: exist.teams } })
+
+    res.send({ message: 'data inserted' })
+
+  }
+  catch (error) {
+    res.send(error)
+  }
+})
+
+// add team member
+
+app.post('/add-team-member', async (req, res) => {
+  const data = req.body;
+  const id = data.challengeId;
+  const teamId = data.teamId;
+  const challengeId = data.cId;
+  const name = data.memberName;
+  const email = data.memberEmail;
+  const img = data.memberImg;
+  const designation = data.designation;
+  const status = "pending";
+  try {
+    const challenge = await challengeCollection.findOne({ _id: new ObjectId(challengeId) });
+    if (!challenge) {
+      return res.send({ message: 'Challenge not found' });
+    }
+    const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+    if (!team) {
+      return res.send({ message: 'Team not found' })
+    }
+    const memberDetails = {
+      name: name, email: email, img: img, designation: designation, status: status
+    }
+    const exist = team.members.some(member => member.email === email);
+    if (exist) {
+      return res.send({ message: 'Already have a team with this member' })
+    }
+
+    team.members.push(memberDetails)
+    const result = await challengeCollection.updateOne({ _id: new ObjectId(challengeId) }, { $set: { teams: challenge.teams } }, { upsert: true })
+    res.send({ message: 'Join Request Sent' })
+
+
+  }
+  catch (err) {
+    res.send(err)
+    console.log(err)
+  }
+})
+
+
+
+//delete member
+
+app.post('/remove-team-member', async (req, res) => {
+  const data = req.body;
+  const id = data.id;
+  const email = data.email;
+  const teamId = data.teamId;
+  const challenge = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+  if (!challenge) {
+    return res.send({ message: 'Challenge not found' });
+  }
+
+  const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+  if (!team) {
+    return res.send({ message: 'Team not found' });
+  }
+
+  const exist = team.members.findIndex(member => member.email === email);
+
+  if (exist === -1) {
+    return res.send({ message: 'Member not found' });
+  }
+
+  const removedMember = team.members.splice(exist, 1)[0];
+  if (!team.removedMembers) {
+    team.removedMembers = [];
+  }
+  team.removedMembers.push(removedMember);
+
+  await challengeCollection.updateOne(
+    { _id: new ObjectId(id), 'teams._id': team._id },
+    { $set: { 'teams.$.members': team.members, 'teams.$.removedMembers': team.removedMembers } }
+  );
+  res.send({ message: 'Member removed successfully' });
+});
+
+
+//approve member
+app.post('/approveMember', async (req, res) => {
+  const data = req.body;
+  const id = data.id;
+  const memberEmail = data.email;
+  const teamId = data.teamId;
+  const challenge = await challengeCollection.findOne({ _id: new ObjectId(id) });
+
+  if (!challenge) {
+    return res.send({ message: 'Challenge not found' });
+  }
+
+  const team = challenge.teams.find(team => team._id.toString() === teamId);
+
+  if (!team) {
+    return res.send({ message: 'Team not found' });
+  }
+
+  const exist = team.members.findIndex(member => member.email === memberEmail);
+  if (exist === -1) {
+    return res.send({ message: 'Member not found' });
+  }
+
+  // Remove the status property from the specific member
+  delete team.members[exist].status;
+
+  // Update the document in the collection
+  await challengeCollection.updateOne(
+    { _id: new ObjectId(id), 'teams._id': new ObjectId(teamId) },
+    { $set: { 'teams.$.members': team.members } }
+  );
+
+  res.send({ message: 'Member approved successfully' })
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`);
+
 });
