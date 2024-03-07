@@ -18,7 +18,7 @@ app.use(express.json());
 
 //verify token
 const verifyToken = (req, res, next) => {
-  console.log('verify token', req.headers.authorization);
+  // console.log('verify token', req.headers.authorization);
   if (!req.headers.authorization) {
     return res.status(401).send('Unauthorized request');
   }
@@ -1008,7 +1008,7 @@ app.delete('/delete-company/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
   const result = await userCollection.deleteOne(query);
-  if(result){
+  if (result) {
     res.send(result);
   }
   else {
@@ -1379,13 +1379,14 @@ app.post('/schedule-interview', verifyToken, async (req, res) => {
   const jobId = data.jobId;
 
   // for finding specific applied job of the user
-  const applyJobQuery = { _id: jobId }
+  const applyJobQuery = { jobId: jobId }
   const userQuery = { candidate: data.email }
 
   // for updating schedule interview data
   const interviewDate = data.date
   const interviewTime = data.time
   const googleMeet = data.googleMeetLink
+
 
   const scheduleInterview = {
     interviewDate, interviewTime, googleMeet
@@ -1395,18 +1396,15 @@ app.post('/schedule-interview', verifyToken, async (req, res) => {
     const job = await jobPostsCollection.findOne({ _id: new ObjectId(jobId) });
 
     if (!job) {
-      console.log('Job not found');
       return res.status(404).json({ error: 'Job not found' });
     }
 
     const applicantIndex = job.applicants.findIndex(applicant => applicant.email === data.email);
 
     if (applicantIndex === -1) {
-      console.log('Applicant not found');
       return res.status(404).json({ error: 'Applicant not found' });
     }
 
-    console.log('Applicant found:', job.applicants[applicantIndex]);
 
     job.applicants[applicantIndex].scheduleInterview = {
       interviewDate: data.date,
@@ -1414,12 +1412,12 @@ app.post('/schedule-interview', verifyToken, async (req, res) => {
       googleMeet: data.googleMeetLink
     };
 
-    console.log('Updated applicant:', job.applicants[applicantIndex]);
-
     await jobPostsCollection.updateOne(
       { _id: new ObjectId(jobId) },
       { $set: job }
     );
+
+    // console.log(applyJobQuery, userQuery)
 
     const appliedJob = await applyJobsCollection.findOneAndUpdate(
       { ...applyJobQuery, ...userQuery },
@@ -1427,7 +1425,7 @@ app.post('/schedule-interview', verifyToken, async (req, res) => {
       { new: true }
     );
 
-    console.log(appliedJob)
+    // console.log('applied job update', appliedJob)
 
     console.log('Interview scheduled successfully');
     res.status(200).json({ message: 'Interview scheduled successfully', appliedJob });
