@@ -244,7 +244,7 @@ app.post("/sendFeedback", verifyToken, async (req, res) => {
 });
 
 // website feedback for candied and company
-app.post("/websiteFeedback",  async (req, res) => {
+app.post("/websiteFeedback", async (req, res) => {
   const feedbackForWebsite = req.body;
   try {
     const postFeedback = await websiteFeedbackCollection.insertOne(feedbackForWebsite);
@@ -985,13 +985,35 @@ app.delete('/delete-company-postedJob/:email', verifyToken, async (req, res) => 
   const email = req.params.email;
   const query = { email: email }
   const result = await jobPostsCollection.deleteMany(query);
-  res.send(result);
+  if (result) {
+    res.send(result);
+  }
+  else {
+    res.send(true);
+  }
 })
+app.delete('/delete-company-from-companies/:email', verifyToken, async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email }
+  const result = await candidateCollection.deleteOne(query);
+  if (result) {
+    res.send(result);
+  }
+  else {
+    res.send(true);
+  }
+})
+
 app.delete('/delete-company/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const query = { _id: new ObjectId(id) }
-  const result = await companyCollection.deleteOne(query);
-  res.send(result);
+  const result = await userCollection.deleteOne(query);
+  if(result){
+    res.send(result);
+  }
+  else {
+    res.send(true);
+  }
 })
 
 //admin  =  posted jobs delate
@@ -1688,8 +1710,8 @@ app.post('/approveMember', async (req, res) => {
   );
 
   res.send({ message: 'Member approved successfully' })
-  });
-  
+});
+
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 
